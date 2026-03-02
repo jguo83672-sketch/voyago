@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}添加目的地 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-geo-alt-plus"></i> 添加新目的地</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <h5 class="mb-3">基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">目的地名称 *</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                placeholder="例如: 北京、巴黎、东京">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="country" class="form-label">国家 *</label>
+                            <input type="text" class="form-control" id="country" name="country" required
+                                placeholder="例如: 中国、法国、日本">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="city" class="form-label">城市</label>
+                        <input type="text" class="form-control" id="city" name="city"
+                            placeholder="例如: 首都、直辖市、省">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">目的地描述 *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required
+                            placeholder="介绍这个目的地的特色、文化、气候等..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cover_image" class="form-label">封面图片</label>
+                        <input type="file" class="form-control" id="cover_image" name="cover_image" 
+                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB</div>
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="rating" class="form-label">评分 (0-5)</label>
+                            <input type="number" class="form-control" id="rating" name="rating" 
+                                min="0" max="5" step="0.1" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tags" class="form-label">标签</label>
+                            <input type="text" class="form-control" id="tags" name="tags"
+                                placeholder="例如: 历史,美食,购物,自然,文化 (用逗号分隔)">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('destinations') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 添加目的地
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 填写提示</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>目的地名称和国家为必填项</li>
+                    <li>描述应包含目的地的特色、最佳旅游时间、交通方式等信息</li>
+                    <li>标签可以帮助用户更快地找到目的地</li>
+                    <li>图片会被自动压缩优化，建议上传高质量图片</li>
+                    <li>评分范围为 0-5 分，支持小数点后一位</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('cover_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+    
+    if (file) {
+        if (file.size > 16 * 1024 * 1024) {
+            alert('文件大小不能超过 16MB');
+            this.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <div class="border p-3 rounded">
+                    <p class="mb-2">预览:</p>
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
+                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

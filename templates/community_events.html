@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}{{ community.name }} 活动列表 - Voyago{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('communities') }}">社群</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('community_detail', id=community.id) }}">{{ community.name }}</a></li>
+            <li class="breadcrumb-item active">活动列表</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar-event"></i> 社群活动</h2>
+        {% if current_user.is_authenticated %}
+        <div class="btn-group">
+            <button class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> 创建活动
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 状态筛选 -->
+    <div class="btn-group mb-3" role="group">
+        <a href="{{ url_for('community_events', community_id=community.id, status='all') }}"
+           class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">全部</a>
+        <a href="{{ url_for('community_events', community_id=community.id, status='upcoming') }}"
+           class="btn {% if status == 'upcoming' %}btn-primary{% else %}btn-outline-primary{% endif %}">即将开始</a>
+        <a href="{{ url_for('community_events', community_id=community.id, status='ongoing') }}"
+           class="btn {% if status == 'ongoing' %}btn-primary{% else %}btn-outline-primary{% endif %}">进行中</a>
+        <a href="{{ url_for('community_events', community_id=community.id, status='completed') }}"
+           class="btn {% if status == 'completed' %}btn-primary{% else %}btn-outline-primary{% endif %}">已结束</a>
+    </div>
+
+    {% if events.items %}
+    <div class="row">
+        {% for event in events.items %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                {% if event.cover_image %}
+                <img src="{{ url_for('static', filename='uploads/events/' + event.cover_image) }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                    <i class="bi bi-calendar-event fs-1 text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5>{{ event.title }}</h5>
+                    <p class="text-muted small mb-2">{{ event.description[:100] }}...</p>
+                    <div class="small text-muted">
+                        <i class="bi bi-calendar3"></i> {{ event.start_time.strftime('%Y-%m-%d %H:%M') }}
+                        <i class="bi bi-people ms-3"></i> {{ event.participant_count }}/{{ event.max_participants }}
+                    </div>
+                    <div class="mt-2">
+                        {% if event.status == 'upcoming' %}
+                        <span class="badge bg-primary">即将开始</span>
+                        {% elif event.status == 'ongoing' %}
+                        <span class="badge bg-success">进行中</span>
+                        {% elif event.status == 'completed' %}
+                        <span class="badge bg-secondary">已结束</span>
+                        {% elif event.status == 'cancelled' %}
+                        <span class="badge bg-danger">已取消</span>
+                        {% endif %}
+                        <a href="{{ url_for('event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary float-end">
+                            查看详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if events.pages > 1 %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if events.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=events.prev_num) }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page_num in events.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == events.page %}
+                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=page_num) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if events.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=events.next_num) }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <p class="text-muted mt-3">暂无活动</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

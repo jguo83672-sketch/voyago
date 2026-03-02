@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}编辑个人资料 - Voyago{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-person-gear"></i> 编辑个人资料</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- 基本信息 -->
+                        <h5 class="mb-3">基本信息</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">用户名</label>
+                                <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">邮箱</label>
+                                <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">真实姓名</label>
+                            <input type="text" class="form-control" name="real_name" value="{{ current_user.real_name or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">性别</label>
+                            <select class="form-select" name="gender">
+                                <option value="">请选择</option>
+                                <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>男</option>
+                                <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>女</option>
+                                <option value="other" {% if current_user.gender == 'other' %}selected{% endif %}>其他</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">出生日期</label>
+                            <input type="date" class="form-control" name="birth_date"
+                                   value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">所在地</label>
+                            <input type="text" class="form-control" name="location" value="{{ current_user.location or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">联系电话</label>
+                            <input type="tel" class="form-control" name="phone" value="{{ current_user.phone or '' }}">
+                        </div>
+
+                        <!-- 个人简介 -->
+                        <h5 class="mb-3 mt-4">个人简介</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">个人简介</label>
+                            <textarea class="form-control" name="bio" rows="3">{{ current_user.bio or '' }}</textarea>
+                        </div>
+
+                        <!-- 兴趣爱好 -->
+                        <h5 class="mb-3 mt-4">兴趣偏好</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">兴趣爱好</label>
+                            <textarea class="form-control" name="hobbies" rows="2"
+                                      placeholder="例如：摄影, 阅读, 美食, 户外运动 (用逗号分隔)">{{ current_user.hobbies or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">旅行风格</label>
+                            <select class="form-select" name="travel_style">
+                                <option value="">请选择</option>
+                                <option value="backpacker" {% if current_user.travel_style == 'backpacker' %}selected{% endif %}>背包客</option>
+                                <option value="luxury" {% if current_user.travel_style == 'luxury' %}selected{% endif %}>豪华游</option>
+                                <option value="adventure" {% if current_user.travel_style == 'adventure' %}selected{% endif %}>探险游</option>
+                                <option value="leisure" {% if current_user.travel_style == 'leisure' %}selected{% endif %}>休闲游</option>
+                                <option value="cultural" {% if current_user.travel_style == 'cultural' %}selected{% endif %}>文化游</option>
+                                <option value="foodie" {% if current_user.travel_style == 'foodie' %}selected{% endif %}>美食游</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">旅行兴趣</label>
+                            <textarea class="form-control" name="travel_interests" rows="2"
+                                      placeholder="例如：自然风光, 历史古迹, 海滨度假, 山地徒步 (用逗号分隔)">{{ current_user.travel_interests or '' }}</textarea>
+                        </div>
+
+                        <!-- 头像 -->
+                        <h5 class="mb-3 mt-4">头像</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">上传头像</label>
+                            <input type="file" class="form-control" name="avatar" accept="image/*">
+                            <small class="text-muted">支持 PNG, JPG, GIF 格式，最大 16MB</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('profile') }}" class="btn btn-secondary">取消</a>
+                            <button type="submit" class="btn btn-primary">保存修改</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

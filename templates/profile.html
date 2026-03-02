@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if current_user.avatar %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}" class="rounded-circle mb-3" width="100" height="100" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px;">
+                    <i class="bi bi-person text-white" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <h4>{{ current_user.username }}</h4>
+                <p class="text-muted">{{ current_user.email }}</p>
+                {% if current_user.real_name %}
+                <p><strong>真实姓名:</strong> {{ current_user.real_name }}</p>
+                {% endif %}
+                {% if current_user.bio %}
+                <p>{{ current_user.bio }}</p>
+                {% endif %}
+                {% if current_user.hobbies %}
+                <p class="small text-muted"><strong>兴趣爱好:</strong> {{ current_user.hobbies }}</p>
+                {% endif %}
+                {% if current_user.travel_style %}
+                <p class="small text-muted"><strong>旅行风格:</strong> {{ current_user.travel_style }}</p>
+                {% endif %}
+                {% if current_user.location %}
+                <p class="small text-muted"><strong>所在地:</strong> {{ current_user.location }}</p>
+                {% endif %}
+                <p class="text-muted">
+                    <small>加入于: {{ current_user.created_at.strftime('%Y年%m月') }}</small>
+                </p>
+                <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil"></i> 编辑资料
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ itineraries|length }}</h3>
+                        <p class="mb-0">行程</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ guides|length }}</h3>
+                        <p class="mb-0">攻略</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ communities|length }}</h3>
+                        <p class="mb-0">社群</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ events|length }}</h3>
+                        <p class="mb-0">活动</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="profileTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#itineraries-tab">我的行程</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#guides-tab">我的攻略</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#communities-tab">我的社群</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#events-tab">我的活动</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#footprints-tab">个人足迹</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="itineraries-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>我的行程</h5>
+            <a href="{{ url_for('create_itinerary') }}" class="btn btn-sm btn-primary">创建新行程</a>
+        </div>
+        {% if itineraries %}
+        <div class="row">
+            {% for itinerary in itineraries %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ itinerary.title }}</h5>
+                        <p class="card-text text-muted">{{ itinerary.destination_names }} · {{ itinerary.days }}天</p>
+                        <p class="card-text">{{ itinerary.description[:80] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small><i class="bi bi-eye"></i> {{ itinerary.view_count }}</small>
+                            <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">还没有创建行程，<a href="{{ url_for('create_itinerary') }}">立即创建</a></p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="guides-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>我的攻略</h5>
+            <a href="{{ url_for('create_guide') }}" class="btn btn-sm btn-primary">发布新攻略</a>
+        </div>
+        {% if guides %}
+        <div class="row">
+            {% for guide in guides %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ guide.title }}</h5>
+                        <p class="card-text text-muted">{{ guide.destination.name }}</p>
+                        <p class="card-text">{{ guide.content[:80] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small>
+                                <i class="bi bi-eye"></i> {{ guide.view_count }}
+                                <i class="bi bi-heart ms-2"></i> {{ guide.like_count }}
+                            </small>
+                            <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">还没有发布攻略，<a href="{{ url_for('create_guide') }}">立即发布</a></p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="communities-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>我的社群</h5>
+            <a href="{{ url_for('create_community') }}" class="btn btn-sm btn-primary">创建社群</a>
+        </div>
+        {% if communities %}
+        <div class="row">
+            {% for community in communities %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ community.name }}</h5>
+                        <p class="card-text text-muted">{{ community.description[:80] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small><i class="bi bi-people"></i> {{ community.member_count }}/{{ community.max_members }}</small>
+                            <a href="{{ url_for('community_detail', id=community.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">还没有加入任何社群，<a href="{{ url_for('communities') }}">去发现</a></p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="events-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>已报名活动</h5>
+        </div>
+        {% if events %}
+        <div class="row">
+            {% for event in events %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted">
+                            <i class="bi bi-calendar3"></i> {{ event.start_time.strftime('%Y-%m-%d %H:%M') }}
+                        </p>
+                        <p class="card-text">{{ event.description[:60] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge {% if event.status == 'upcoming' %}bg-primary{% elif event.status == 'ongoing' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if event.status == 'upcoming' %}即将开始{% elif event.status == 'ongoing' %}进行中{% else %}已结束{% endif %}
+                            </span>
+                            <a href="{{ url_for('event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">还没有报名任何活动</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="footprints-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>个人足迹</h5>
+            <div>
+                <a href="{{ url_for('add_footprint') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg"></i> 添加足迹
+                </a>
+            </div>
+        </div>
+
+        {% if footprints %}
+        <!-- 统计信息 -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h4>{{ footprints|length }}</h4>
+                        <p class="mb-0 text-muted">足迹总数</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h4>{{ footprints|map(attribute='destination')|map(attribute='country')|unique|list|length }}</h4>
+                        <p class="mb-0 text-muted">国家/地区</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h4>{{ footprints|map(attribute='destination')|map(attribute='city')|select|list|length }}</h4>
+                        <p class="mb-0 text-muted">城市</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 地图展示 -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-map"></i> 足迹地图
+            </div>
+            <div class="card-body">
+                <div id="footprint-map" style="height: 400px;"></div>
+            </div>
+        </div>
+
+        <!-- 足迹列表 -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list"></i> 足迹列表
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>目的地</th>
+                                <th>国家</th>
+                                <th>城市</th>
+                                <th>访问日期</th>
+                                <th>评分</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for footprint in footprints %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('destination_detail', id=footprint.destination.id) }}">
+                                        {{ footprint.destination.name }}
+                                    </a>
+                                </td>
+                                <td>{{ footprint.destination.country }}</td>
+                                <td>{{ footprint.destination.city or '-' }}</td>
+                                <td>{{ footprint.visit_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if footprint.rating %}
+                                    <span class="text-warning">
+                                        {% for i in range(1, 6) %}
+                                        {% if i <= footprint.rating %}<i class="bi bi-star-fill"></i>
+                                        {% else %}<i class="bi bi-star"></i>{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    {% else %}-
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('edit_footprint', id=footprint.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="{{ url_for('delete_footprint', id=footprint.id) }}" method="post" class="d-inline"
+                                          onsubmit="return confirm('确定要删除这条足迹吗？');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-geo-alt" style="font-size: 4rem; color: #ccc;"></i>
+            <p class="mt-3 text-muted">还没有添加任何足迹</p>
+            <a href="{{ url_for('add_footprint') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> 添加第一条足迹
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 地图相关脚本 -->
+{% if footprints %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<script>
+// 扩展的城市坐标映射
+const cityCoordinates = {
+    '北京': [39.9042, 116.4074],
+    '上海': [31.2304, 121.4737],
+    '广州': [23.1291, 113.2644],
+    '深圳': [22.5431, 114.0579],
+    '成都': [30.5728, 104.0668],
+    '杭州': [31.2741, 120.1551],
+    '西安': [34.3416, 108.9398],
+    '武汉': [30.5928, 114.3055],
+    '重庆': [29.5630, 106.5516],
+    '南京': [32.0603, 118.7969],
+    '天津': [39.3434, 117.3616],
+    '苏州': [31.2990, 120.5853],
+    '青岛': [36.0671, 120.3826],
+    '大连': [38.9140, 121.6147],
+    '厦门': [24.4798, 118.0819],
+    '昆明': [25.0389, 102.7183],
+    '宁波': [29.8683, 121.5440],
+    '无锡': [31.4912, 120.3119],
+    '长沙': [28.2282, 112.9388],
+    '郑州': [34.7466, 113.6254],
+    '沈阳': [41.8057, 123.4328],
+    '哈尔滨': [45.8038, 126.5349],
+    '三亚': [18.2528, 109.5119],
+    '桂林': [25.2742, 110.2909],
+    '拉萨': [29.6500, 91.1000],
+    '乌鲁木齐': [43.8256, 87.6168],
+    '兰州': [36.0611, 103.8343],
+    '呼和浩特': [40.8414, 111.7519],
+    '太原': [37.8706, 112.5489],
+    '石家庄': [38.0428, 114.5149],
+    '济南': [36.6512, 117.1201],
+    '合肥': [31.8206, 117.2272],
+    '福州': [26.0745, 119.2965],
+    '南昌': [28.6895, 115.8942],
+    '贵阳': [26.6470, 106.6302],
+    '南宁': [22.8170, 108.3665],
+    '海口': [20.0458, 110.1989],
+    '西宁': [36.6171, 101.7782],
+    '银川': [38.4681, 106.2731],
+    '台北': [25.0320, 121.5654],
+    '高雄': [22.6273, 120.3014],
+    '台中': [24.1477, 120.6736],
+    '香港': [22.3193, 114.1694],
+    '澳门': [22.1987, 113.5439],
+    '东京': [35.6762, 139.6503],
+    '大阪': [34.6937, 135.5023],
+    '京都': [35.0116, 135.7681],
+    '横滨': [35.4437, 139.6380],
+    '名古屋': [35.1815, 136.9066],
+    '福冈': [33.5904, 130.4017],
+    '札幌': [43.0618, 141.3545],
+    '首尔': [37.5665, 126.9780],
+    '釜山': [35.1796, 129.0756],
+    '仁川': [37.4563, 126.7052],
+    '济州': [33.4996, 126.5312],
+    '曼谷': [13.7563, 100.5018],
+    '清迈': [18.7883, 98.9853],
+    '普吉': [7.8804, 98.3923],
+    '新加坡': [1.3521, 103.8198],
+    '吉隆坡': [3.1390, 101.6869],
+    '槟城': [5.4141, 100.3288],
+    '雅加达': [-6.2088, 106.8456],
+    '巴厘岛': [-8.4095, 115.1889],
+    '马尼拉': [14.5995, 120.9842],
+    '河内': [21.0285, 105.8542],
+    '胡志明': [10.8231, 106.6297],
+    '金边': [11.5564, 104.9282],
+    '仰光': [16.8661, 96.1951],
+    '巴黎': [48.8566, 2.3522],
+    '伦敦': [51.5074, -0.1278],
+    '纽约': [40.7128, -74.0060],
+    '洛杉矶': [34.0522, -118.2437],
+    '旧金山': [37.7749, -122.4194],
+    '芝加哥': [41.8781, -87.6298],
+    '华盛顿': [38.9072, -77.0369],
+    '波士顿': [42.3601, -71.0589],
+    '迈阿密': [25.7617, -80.1918],
+    '拉斯维加斯': [36.1699, -115.1398],
+    '西雅图': [47.6062, -122.3321],
+    '悉尼': [-33.8688, 151.2093],
+    '墨尔本': [-37.8136, 144.9631],
+    '布里斯班': [-27.4698, 153.0251],
+    '迪拜': [25.2048, 55.2708],
+    '罗马': [41.9028, 12.4964],
+    '威尼斯': [45.4408, 12.3155],
+    '佛罗伦萨': [43.7696, 11.2558],
+    '米兰': [45.4642, 9.1900],
+    '巴塞罗那': [41.3851, 2.1734],
+    '马德里': [40.4168, -3.7038],
+    '阿姆斯特丹': [52.3676, 4.9041],
+    '柏林': [52.5200, 13.4050],
+    '慕尼黑': [48.1351, 11.5820],
+    '汉堡': [55.6761, 9.9937],
+    '维也纳': [48.2082, 16.3738],
+    '布拉格': [50.0755, 14.4378],
+    '苏黎世': [47.3769, 8.5417],
+    '斯德哥尔摩': [59.3293, 18.0686],
+    '哥本哈根': [55.6761, 12.5683],
+    '赫尔辛基': [60.1695, 24.9354],
+    '奥斯陆': [59.9139, 10.7522],
+    '温哥华': [49.2827, -123.1207],
+    '多伦多': [43.6532, -79.3832],
+    '蒙特利尔': [45.5017, -73.5673],
+    '开罗': [30.0444, 31.2357],
+    '约翰内斯堡': [-26.2041, 28.0473],
+    '开普敦': [-33.9249, 18.4241],
+    '伊斯坦布尔': [41.0082, 28.9784],
+    '莫斯科': [55.7558, 37.6173],
+    '圣彼得堡': [59.9343, 30.3351]
+};
+
+// 国家坐标（备用，优先匹配城市坐标）
+const countryCoordinates = {
+    '中国': [35.8617, 104.1954],
+    '日本': [36.2048, 138.2529],
+    '韩国': [35.9078, 127.7669],
+    '朝鲜': [40.3399, 127.5101],
+    '泰国': [15.8700, 100.9925],
+    '新加坡': [1.3521, 103.8198],
+    '马来西亚': [4.2105, 101.9758],
+    '印度尼西亚': [-0.7893, 113.9213],
+    '菲律宾': [12.8797, 121.7740],
+    '越南': [14.0583, 108.2772],
+    '柬埔寨': [12.5657, 104.9910],
+    '老挝': [19.8563, 102.4955],
+    '缅甸': [21.9162, 95.9560],
+    '法国': [46.2276, 2.2137],
+    '英国': [55.3781, -3.4360],
+    '美国': [37.0902, -95.7129],
+    '澳大利亚': [-25.2744, 133.7751],
+    '阿联酋': [23.4241, 53.8478],
+    '意大利': [41.8719, 12.5674],
+    '西班牙': [40.4637, -3.7492],
+    '荷兰': [52.1326, 5.2913],
+    '德国': [51.1657, 10.4515],
+    '加拿大': [56.1304, -106.3468],
+    '奥地利': [47.5162, 14.5501],
+    '捷克': [49.8175, 15.4730],
+    '瑞士': [46.8182, 8.2275],
+    '瑞典': [60.1282, 18.6435],
+    '丹麦': [56.2639, 9.5018],
+    '芬兰': [61.9241, 25.7482],
+    '挪威': [60.4720, 8.4689],
+    '俄罗斯': [61.5240, 105.3188],
+    '埃及': [26.8206, 30.8025],
+    '南非': [-30.5595, 22.9375],
+    '土耳其': [38.9637, 35.2433]
+};
+
+// 初始化地图（使用国内可访问的高德地图）
+const map = L.map('footprint-map').setView([35, 105], 4);
+
+// 使用高德地图瓦片服务（国内可访问）
+L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: ['1', '2', '3', '4'],
+    minZoom: 3,
+    maxZoom: 18,
+    attribution: '© 高德地图'
+}).addTo(map);
+
+// 足迹数据
+const footprints = [
+    {% for footprint in footprints %}
+    {
+        id: {{ footprint.id }},
+        destination: '{{ footprint.destination.name }}',
+        country: '{{ footprint.destination.country }}',
+        city: {{ 'null' if not footprint.destination.city else "'" + footprint.destination.city + "'" }},
+        date: '{{ footprint.visit_date.strftime("%Y-%m-%d") }}',
+        rating: {{ footprint.rating or 'null' }},
+        note: {{ 'null' if not footprint.note else "'" + footprint.note.replace("'", "\\'") + "'" }}
+    }{{ ',' if not loop.last else '' }}
+    {% endfor %}
+];
+
+// 添加标记到地图
+const markers = [];
+const countryColors = {};
+
+// 为不同国家分配不同颜色
+const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e91e63', '#00bcd4', '#ff5722', '#795548'];
+let colorIndex = 0;
+
+footprints.forEach((fp, index) => {
+    let coords = null;
+
+    // 优先使用城市坐标
+    if (fp.city && cityCoordinates[fp.city]) {
+        coords = cityCoordinates[fp.city];
+        console.log(`使用城市坐标: ${fp.city}`, coords);
+    } else if (countryCoordinates[fp.country]) {
+        coords = countryCoordinates[fp.country];
+        console.log(`使用国家坐标: ${fp.country}`, coords);
+    } else {
+        console.warn(`未找到坐标: ${fp.destination} (${fp.country}, ${fp.city})`);
+    }
+
+    if (coords) {
+        const color = countryColors[fp.country] || (countryColors[fp.country] = colors[colorIndex++ % colors.length]);
+
+        const marker = L.circleMarker(coords, {
+            radius: 12,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map);
+
+        const ratingStars = fp.rating ? '★'.repeat(fp.rating) + '☆'.repeat(5 - fp.rating) : '';
+        const popupContent = `
+            <div style="min-width: 200px; font-size: 14px;">
+                <h6 style="margin: 0 0 8px 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    ${fp.destination}
+                </h6>
+                <div style="margin: 6px 0;">
+                    <span style="color: #666;">📍 ${fp.country}</span>
+                    ${fp.city ? `<span style="color: #666; margin-left: 8px;">${fp.city}</span>` : ''}
+                </div>
+                <div style="margin: 6px 0; color: #999;">📅 ${fp.date}</div>
+                ${ratingStars ? `<div style="margin: 6px 0; color: #f39c12; font-size: 18px;">${ratingStars}</div>` : ''}
+                ${fp.note ? `<div style="margin: 8px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #555;">${fp.note}</div>` : ''}
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+    }
+});
+
+// 自动调整地图视图以包含所有标记
+if (markers.length > 0) {
+    const group = new L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.15));
+    console.log(`已添加 ${markers.length} 个标记到地图`);
+} else {
+    console.log('没有足迹标记可显示');
+}
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}编辑目的地 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> 编辑目的地</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <h5 class="mb-3">基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">目的地名称 *</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                value="{{ destination.name }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="country" class="form-label">国家 *</label>
+                            <input type="text" class="form-control" id="country" name="country" required
+                                value="{{ destination.country }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="city" class="form-label">城市</label>
+                        <input type="text" class="form-control" id="city" name="city"
+                            value="{{ destination.city }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">目的地描述 *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required>{{ destination.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cover_image" class="form-label">封面图片</label>
+                        <input type="file" class="form-control" id="cover_image" name="cover_image"
+                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB。不选择则保留原图片</div>
+                        {% if destination.cover_image %}
+                        <div class="mt-2">
+                            <p class="mb-1">当前封面:</p>
+                            <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}" class="img-fluid rounded" style="max-height: 200px;">
+                        </div>
+                        {% endif %}
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="rating" class="form-label">评分 (0-5)</label>
+                            <input type="number" class="form-control" id="rating" name="rating"
+                                min="0" max="5" step="0.1" value="{{ destination.rating }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tags" class="form-label">标签</label>
+                            <input type="text" class="form-control" id="tags" name="tags"
+                                value="{{ destination.tags }}"
+                                placeholder="例如: 历史,美食,购物,自然,文化 (用逗号分隔)">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('destination_detail', id=destination.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('cover_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+
+    if (file) {
+        if (file.size > 16 * 1024 * 1024) {
+            alert('文件大小不能超过 16MB');
+            this.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <div class="border p-3 rounded">
+                    <p class="mb-2">新图片预览:</p>
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
+                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

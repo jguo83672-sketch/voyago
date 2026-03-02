@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}搜索: {{ query }} - Voyago{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1><i class="bi bi-search"></i> 搜索结果: "{{ query }}"</h1>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="searchTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link {% if destinations or not guides and not itineraries %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#destinations-tab">
+            目的地 ({{ destinations|length }})
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link {% if guides and not destinations %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#guides-tab">
+            攻略 ({{ guides|length }})
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#itineraries-tab">
+            行程 ({{ itineraries|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade {% if destinations or not guides and not itineraries %}show active{% endif %}" id="destinations-tab">
+        {% if destinations %}
+        <div class="row">
+            {% for destination in destinations %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ destination.name }}</h5>
+                        <p class="card-text text-muted">{{ destination.country }}</p>
+                        <p class="card-text">{{ destination.description[:80] }}...</p>
+                        <a href="{{ url_for('destination_detail', id=destination.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">没有找到相关目的地</p>
+        {% endif %}
+    </div>
+    
+    <div class="tab-pane fade {% if guides and not destinations %}show active{% endif %}" id="guides-tab">
+        {% if guides %}
+        <div class="row">
+            {% for guide in guides %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ guide.title }}</h5>
+                        <p class="card-text text-muted">{{ guide.author.username }} · {{ guide.destination.name }}</p>
+                        <p class="card-text">{{ guide.content[:80] }}...</p>
+                        <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-primary">阅读全文</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">没有找到相关攻略</p>
+        {% endif %}
+    </div>
+    
+    <div class="tab-pane fade" id="itineraries-tab">
+        {% if itineraries %}
+        <div class="row">
+            {% for itinerary in itineraries %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ itinerary.title }}</h5>
+                        <p class="card-text text-muted">{{ itinerary.destination.name }} · {{ itinerary.days }}天</p>
+                        <p class="card-text">{{ itinerary.description[:80] }}...</p>
+                        <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">没有找到相关行程</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

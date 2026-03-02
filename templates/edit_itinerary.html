@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}编辑行程 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> 编辑行程</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <h5 class="mb-3">基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="title" class="form-label">行程标题</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                value="{{ itinerary.title }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">行程描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required>{{ itinerary.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cover_image" class="form-label">封面图片</label>
+                        <input type="file" class="form-control" id="cover_image" name="cover_image"
+                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB。不选择则保留原图片</div>
+                        {% if itinerary.cover_image %}
+                        <div class="mt-2">
+                            <p class="mb-1">当前封面:</p>
+                            <img src="{{ url_for('static', filename='uploads/' + itinerary.cover_image) }}" class="img-fluid rounded" style="max-height: 200px;">
+                        </div>
+                        {% endif %}
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="days" class="form-label">行程天数</label>
+                            <input type="number" class="form-control" id="days" name="days" min="1" max="30" required
+                                value="{{ itinerary.days }}" readonly>
+                            <div class="form-text">修改天数需要重新创建行程</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="start_date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required
+                                value="{{ itinerary.start_date.strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="end_date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required
+                                value="{{ itinerary.end_date.strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="budget" class="form-label">预算 (元)</label>
+                            <input type="number" class="form-control" id="budget" name="budget" min="0"
+                                value="{{ itinerary.budget }}">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 编辑提示</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>目前只能编辑基本信息，每日行程安排的修改功能正在开发中</li>
+                    <li>如需修改行程天数，请删除后重新创建行程</li>
+                    <li>目的地的修改需要重新创建行程</li>
+                    <li>图片会被自动压缩优化</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('cover_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+
+    if (file) {
+        if (file.size > 16 * 1024 * 1024) {
+            alert('文件大小不能超过 16MB');
+            this.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <div class="border p-3 rounded">
+                    <p class="mb-2">新图片预览:</p>
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
+                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

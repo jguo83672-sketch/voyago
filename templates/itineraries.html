@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}旅行行程 - Voyago{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar3"></i> 精选行程</h1>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('create_itinerary') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> 创建行程
+    </a>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% for itinerary in itineraries.items %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card itinerary-card h-100">
+            {% if itinerary.cover_image %}
+            <img src="{{ url_for('static', filename='uploads/' + itinerary.cover_image) }}" 
+                 class="card-img-top" style="height: 180px; object-fit: cover;" 
+                 alt="{{ itinerary.title }}">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ itinerary.title }}</h5>
+                <p class="card-text text-muted">
+                    <small>
+                        <i class="bi bi-geo-alt"></i> {{ itinerary.destination_names }}
+                        <i class="bi bi-calendar ms-2"></i> {{ itinerary.days }}天
+                    </small>
+                </p>
+                <p class="card-text">{{ itinerary.description[:100] }}...</p>
+                {% if itinerary.start_date and itinerary.end_date %}
+                <p class="card-text text-muted">
+                    <small>
+                        <i class="bi bi-clock"></i> {{ itinerary.start_date.strftime('%Y-%m-%d') }} 至 {{ itinerary.end_date.strftime('%Y-%m-%d') }}
+                    </small>
+                </p>
+                {% endif %}
+                {% if itinerary.budget %}
+                <p class="card-text"><strong>预算:</strong> ¥{{ "%.0f"|format(itinerary.budget) }}</p>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small>
+                        <i class="bi bi-person"></i> {{ itinerary.author.username }}
+                        <i class="bi bi-eye ms-2"></i> {{ itinerary.view_count }}
+                    </small>
+                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if itineraries.pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if itineraries.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('itineraries', page=itineraries.prev_num) }}">上一页</a>
+        </li>
+        {% endif %}
+        {% for page_num in itineraries.iter_pages(left_edge=2, right_edge=2) %}
+            {% if page_num %}
+                {% if page_num == itineraries.page %}
+                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('itineraries', page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if itineraries.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('itineraries', page=itineraries.next_num) }}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

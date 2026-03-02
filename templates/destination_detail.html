@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ destination.name }} - Voyago{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    {% if destination.cover_image %}
+    <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
+         class="img-fluid rounded w-100 fade-in" style="max-height: 450px; object-fit: cover;"
+         alt="{{ destination.name }}">
+    {% else %}
+    <div class="bg-gradient d-flex align-items-center justify-content-center rounded fade-in" style="height: 300px;">
+        <i class="bi bi-image text-white" style="font-size: 5rem;"></i>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="fw-bold">{{ destination.name }}</h1>
+                <p class="text-muted mb-0"><i class="bi bi-geo-alt"></i> {{ destination.country }} {% if destination.city %}· {{ destination.city }}{% endif %}</p>
+            </div>
+            <button onclick="toggleLike('destination', {{ destination.id }})" class="btn btn-outline-danger btn-lg" id="like-btn">
+                <i class="bi bi-heart"></i> <span id="like-count">{{ destination.like_count }}</span>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <span class="badge bg-warning fs-5 me-3">
+                <i class="bi bi-star-fill"></i> {{ "%.1f"|format(destination.rating) }}
+            </span>
+            <span class="badge bg-info fs-6 me-3">
+                <i class="bi bi-eye"></i> {{ destination.visit_count }} 浏览
+            </span>
+            <span class="badge bg-primary fs-6">
+                <i class="bi bi-chat"></i> {{ destination.comment_count }} 评论
+            </span>
+        </div>
+
+        <h3 class="mb-3">简介</h3>
+        <p class="lead">{{ destination.description }}</p>
+
+        {% if destination.tags %}
+        <div class="mb-4">
+            <h5 class="mb-3">标签</h5>
+            {% for tag in destination.tags_list %}
+            <span class="tag-pill">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- 评论区 -->
+        <div class="comment-section">
+            <h3 class="mb-4"><i class="bi bi-chat-dots"></i> 评论 ({{ destination.comment_count }})</h3>
+
+            {% if current_user.is_authenticated %}
+            <form action="{{ url_for('add_destination_comment', id=destination.id) }}" method="POST" class="mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="content" rows="3" placeholder="分享你的看法..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">发表评论</button>
+                    </div>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('login') }}">登录</a>后发表评论
+            </div>
+            {% endif %}
+
+            <div id="comments-list">
+                {% for comment in destination.comments %}
+                <div class="comment-card fade-in">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong class="fw-bold">{{ comment.user.username }}</strong>
+                            <small class="text-muted ms-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">{{ comment.content }}</p>
+                </div>
+                {% endfor %}
+                {% if destination.comment_count == 0 %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
+                    <p class="mt-2">暂无评论，快来发表第一条评论吧！</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">快速操作</h5>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('itineraries', destination_id=destination.id) }}" class="btn btn-primary">
+                        <i class="bi bi-calendar3"></i> 查看相关行程
+                    </a>
+                    <a href="{{ url_for('guides') }}?destination_id={{ destination.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-book"></i> 查看相关攻略
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('create_itinerary') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> 创建行程
+                    </a>
+                    <a href="{{ url_for('create_guide') }}?destination_id={{ destination.id }}" class="btn btn-info text-white">
+                        <i class="bi bi-pencil-square"></i> 发布攻略
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.id == destination.author_id %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">管理操作</h5>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('edit_destination', id=destination.id) }}" class="btn btn-outline-warning">
+                        <i class="bi bi-pencil"></i> 编辑目的地
+                    </a>
+                    <button onclick="deleteDestination()" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> 删除目的地
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if guides %}
+<section class="mb-5">
+    <h3 class="fw-bold mb-4"><i class="bi bi-book-fill text-info"></i> 相关攻略</h3>
+    <div class="row">
+        {% for guide in guides %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ guide.title }}</h5>
+                    <p class="card-text text-muted"><small>{{ guide.author.username }} · {{ guide.view_count }} 浏览</small></p>
+                    <p class="card-text">{{ guide.content[:100] }}...</p>
+                    <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-outline-primary w-100">阅读更多</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if itineraries %}
+<section class="mb-5">
+    <h3 class="fw-bold mb-4"><i class="bi bi-calendar3-fill text-success"></i> 相关行程</h3>
+    <div class="row">
+        {% for itinerary in itineraries %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ itinerary.title }}</h5>
+                    <p class="card-text text-muted">{{ itinerary.days }}天行程 · {{ itinerary.author.username }}</p>
+                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary w-100">查看详情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleLike(type, id) {
+    try {
+        const response = await fetch(`/like/${type}/${id}`);
+        const data = await response.json();
+        const btn = document.getElementById('like-btn');
+        const count = document.getElementById('like-count');
+
+        count.textContent = data.count;
+
+        if (data.liked) {
+            btn.innerHTML = '<i class="bi bi-heart-fill"></i> <span id="like-count">' + data.count + '</span>';
+            btn.classList.remove('btn-outline-danger');
+            btn.classList.add('btn-danger');
+        } else {
+            btn.innerHTML = '<i class="bi bi-heart"></i> <span id="like-count">' + data.count + '</span>';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-outline-danger');
+        }
+    } catch (error) {
+        console.error('点赞失败:', error);
+    }
+}
+
+function deleteDestination() {
+    if (confirm('确定要删除这个目的地吗？此操作不可恢复。')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('delete_destination', id=destination.id) }}";
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

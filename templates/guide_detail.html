@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ guide.title }} - Voyago{% endblock %}
+
+{% block content %}
+<article class="mb-5">
+    <div class="mb-4">
+        {% if guide.cover_image %}
+        <img src="{{ url_for('static', filename='uploads/' + guide.cover_image) }}"
+             class="img-fluid rounded w-100 mb-3 fade-in" style="max-height: 450px; object-fit: cover;"
+             alt="{{ guide.title }}">
+        {% endif %}
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="badge bg-info mb-2">{{ guide.category }}</span>
+                <h1 class="fw-bold">{{ guide.title }}</h1>
+                <p class="text-muted mb-2">
+                    <i class="bi bi-person"></i> {{ guide.author.username }}
+                    <i class="bi bi-calendar3 ms-3"></i> {{ guide.created_at.strftime('%Y年%m月%d日') }}
+                    <i class="bi bi-geo-alt ms-3"></i> {{ guide.destination.name }}
+                </p>
+            </div>
+            <button onclick="toggleFavorite('guide', {{ guide.id }})" class="btn btn-outline-danger" id="favorite-btn">
+                <i class="bi bi-heart"></i> 收藏
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="guide-content">
+                        {{ guide.content|replace('\n', '<br>')|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3">统计信息</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="bi bi-eye text-info"></i> 浏览:</span>
+                        <strong>{{ guide.view_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="bi bi-heart text-danger"></i> 收藏:</span>
+                        <strong>{{ guide.like_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="bi bi-chat text-success"></i> 评论:</span>
+                        <strong>{{ guide.comment_count }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3">目的地信息</h5>
+                    <p class="mb-2"><strong>{{ guide.destination.name }}</strong></p>
+                    <p class="text-muted mb-2">{{ guide.destination.country }}</p>
+                    <hr>
+                    <a href="{{ url_for('destination_detail', id=guide.destination.id) }}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-geo-alt"></i> 查看目的地详情
+                    </a>
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.id == guide.user_id %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">管理操作</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('edit_guide', id=guide.id) }}" class="btn btn-outline-warning">
+                            <i class="bi bi-pencil"></i> 编辑攻略
+                        </a>
+                        <button onclick="deleteGuide()" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> 删除攻略
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="comment-section">
+        <h3 class="mb-4"><i class="bi bi-chat-dots"></i> 发表评论</h3>
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('add_comment', guide_id=guide.id) }}" method="POST">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" rows="4" placeholder="写下你的评论..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发表评论</button>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('login') }}">登录</a>后发表评论
+        </div>
+        {% endif %}
+
+        <h3 class="mb-4">评论 ({{ comments|length }})</h3>
+        {% for comment in comments %}
+        <div class="comment-card fade-in">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong class="fw-bold">{{ comment.user.username }}</strong>
+                    <small class="text-muted ms-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+            </div>
+            <p class="mb-0">{{ comment.content }}</p>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
+            <p class="mt-2">暂无评论，快来发表第一条评论吧！</p>
+        </div>
+        {% endfor %}
+    </section>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleFavorite(type, id) {
+    try {
+        const response = await fetch(`/toggle-favorite/${type}/${id}`);
+        const data = await response.json();
+        const btn = document.getElementById('favorite-btn');
+
+        if (data.favorited) {
+            btn.innerHTML = '<i class="bi bi-heart-fill"></i> 已收藏';
+            btn.classList.remove('btn-outline-danger');
+            btn.classList.add('btn-danger');
+        } else {
+            btn.innerHTML = '<i class="bi bi-heart"></i> 收藏';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-outline-danger');
+        }
+    } catch (error) {
+        console.error('收藏失败:', error);
+    }
+}
+
+function deleteGuide() {
+    if (confirm('确定要删除这个攻略吗？此操作不可恢复。')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('delete_guide', id=guide.id) }}";
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

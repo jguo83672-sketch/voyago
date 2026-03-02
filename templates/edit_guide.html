@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}编辑攻略 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> 编辑攻略</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">攻略标题</label>
+                        <input type="text" class="form-control" id="title" name="title" required
+                            value="{{ guide.title }}">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="destination_id" class="form-label">目的地</label>
+                            <select class="form-select" id="destination_id" name="destination_id" required>
+                                {% for destination in destinations %}
+                                <option value="{{ destination.id }}"
+                                    {% if destination.id == guide.destination_id %}selected{% endif %}>
+                                    {{ destination.name }} - {{ destination.country }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">分类</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="美食" {% if guide.category == '美食' %}selected{% endif %}>美食</option>
+                                <option value="景点" {% if guide.category == '景点' %}selected{% endif %}>景点</option>
+                                <option value="购物" {% if guide.category == '购物' %}selected{% endif %}>购物</option>
+                                <option value="交通" {% if guide.category == '交通' %}selected{% endif %}>交通</option>
+                                <option value="住宿" {% if guide.category == '住宿' %}selected{% endif %}>住宿</option>
+                                <option value="其他" {% if guide.category == '其他' %}selected{% endif %}>其他</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cover_image" class="form-label">封面图片</label>
+                        <input type="file" class="form-control" id="cover_image" name="cover_image"
+                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB。不选择则保留原图片</div>
+                        {% if guide.cover_image %}
+                        <div class="mt-2">
+                            <p class="mb-1">当前封面:</p>
+                            <img src="{{ url_for('static', filename='uploads/' + guide.cover_image) }}" class="img-fluid rounded" style="max-height: 200px;">
+                        </div>
+                        {% endif %}
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">攻略内容</label>
+                        <textarea class="form-control" id="content" name="content" rows="10" required>{{ guide.content }}</textarea>
+                        <div class="form-text">支持 Markdown 格式，描述应包含详细的旅行建议、实用信息等</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('cover_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+
+    if (file) {
+        if (file.size > 16 * 1024 * 1024) {
+            alert('文件大小不能超过 16MB');
+            this.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <div class="border p-3 rounded">
+                    <p class="mb-2">新图片预览:</p>
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
+                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

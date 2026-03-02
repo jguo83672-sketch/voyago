@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Voyago - 发现精彩旅程{% endblock %}
+
+{% block content %}
+<!-- Hero 轮播区域 -->
+<div class="hero-section mb-5">
+    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&h=400&fit=crop&q=80" alt="瑞士风景">
+                <div class="carousel-overlay">
+                    <div class="hero-content">
+                        <h1>探索世界，发现精彩</h1>
+                        <p>与全球旅行者分享你的旅程故事</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&h=400&fit=crop&q=80" alt="海滩度假">
+                <div class="carousel-overlay">
+                    <div class="hero-content">
+                        <h1>规划完美假期</h1>
+                        <p>精选行程攻略，让你的旅行更精彩</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="https://images.unsplash.com/photo-1488085061387-422e29b40080?w=1400&h=400&fit=crop&q=80" alt="城市探索">
+                <div class="carousel-overlay">
+                    <div class="hero-content">
+                        <h1>分享你的故事</h1>
+                        <p>记录每一次旅行，连接同好旅者</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</div>
+
+<!-- 快捷功能区 -->
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <a href="{{ url_for('destinations') }}" class="quick-card">
+                <div class="quick-card-icon">
+                    <i class="bi bi-geo-alt"></i>
+                </div>
+                <div class="quick-card-content">
+                    <h5>浏览目的地</h5>
+                    <p>发现全球精彩目的地</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('guides') }}" class="quick-card">
+                <div class="quick-card-icon">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="quick-card-content">
+                    <h5>阅读攻略</h5>
+                    <p>达人分享旅行经验</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('itineraries') }}" class="quick-card">
+                <div class="quick-card-icon">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+                <div class="quick-card-content">
+                    <h5>查看行程</h5>
+                    <p>参考精选旅行路线</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('create_itinerary') }}" class="quick-card">
+                <div class="quick-card-icon">
+                    <i class="bi bi-plus-circle"></i>
+                </div>
+                <div class="quick-card-content">
+                    <h5>创建行程</h5>
+                    <p>规划你的专属旅行</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 热门目的地 -->
+<section class="mb-5">
+    <div class="section-header">
+        <div>
+            <h2><i class="bi bi-fire text-primary"></i> 热门目的地</h2>
+            <p>探索全球最受欢迎的旅行圣地</p>
+        </div>
+        <a href="{{ url_for('destinations') }}" class="btn-link text-primary">查看全部 <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-4">
+        {% for destination in destinations %}
+        <div class="col-md-4">
+            <a href="{{ url_for('destination_detail', id=destination.id) }}" class="destination-card-link">
+                <div class="destination-card">
+                    {% if destination.cover_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
+                         alt="{{ destination.name }}">
+                    {% else %}
+                    <div class="no-image">
+                        <i class="bi bi-image"></i>
+                    </div>
+                    {% endif %}
+                    <div class="destination-card-info">
+                        <h5>{{ destination.name }}</h5>
+                        <p class="country"><i class="bi bi-geo-alt"></i> {{ destination.country }}</p>
+                        <div class="stats">
+                            <span class="rating"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(destination.rating) }}</span>
+                            <span class="likes"><i class="bi bi-heart"></i> {{ destination.like_count or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 精选攻略 -->
+<section class="mb-5">
+    <div class="section-header">
+        <div>
+            <h2><i class="bi bi-bookmark-fill text-info"></i> 精选攻略</h2>
+            <p>来自旅行达人的实用攻略分享</p>
+        </div>
+        <a href="{{ url_for('guides') }}" class="btn-link text-info">查看全部 <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-4">
+        {% for guide in guides %}
+        <div class="col-md-6">
+            <a href="{{ url_for('guide_detail', id=guide.id) }}" class="guide-card-link">
+                <div class="guide-card">
+                    <div class="guide-card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="guide-title">{{ guide.title }}</h5>
+                            <span class="category-tag">{{ guide.category }}</span>
+                        </div>
+                        <p class="meta"><i class="bi bi-person"></i> {{ guide.author.username }} <span class="separator">·</span> {{ guide.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p class="preview">{{ guide.content[:100] }}...</p>
+                        <div class="guide-stats">
+                            <span><i class="bi bi-eye"></i> {{ guide.view_count or 0 }}</span>
+                            <span><i class="bi bi-heart"></i> {{ guide.like_count or 0 }}</span>
+                            <span><i class="bi bi-chat"></i> {{ guide.comment_count or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 最新行程 -->
+<section class="mb-5">
+    <div class="section-header">
+        <div>
+            <h2><i class="bi bi-calendar-check-fill text-success"></i> 最新行程</h2>
+            <p>精心规划的旅行路线参考</p>
+        </div>
+        <a href="{{ url_for('itineraries') }}" class="btn-link text-success">查看全部 <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-4">
+        {% for itinerary in itineraries %}
+        <div class="col-md-4">
+            <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="itinerary-card-link">
+                <div class="itinerary-card">
+                    <div class="itinerary-card-body">
+                        <h5>{{ itinerary.title }}</h5>
+                        <p class="meta"><i class="bi bi-geo-alt"></i> {{ itinerary.destination_names or '未指定' }} <span class="separator">·</span> <i class="bi bi-clock"></i> {{ itinerary.days or 0 }}天</p>
+                        <p class="preview">{{ itinerary.description[:80] }}...</p>
+                        {% if itinerary.budget %}
+                        <p class="budget"><i class="bi bi-currency-yen"></i> 预算: ¥{{ "%.0f"|format(itinerary.budget) }}</p>
+                        {% endif %}
+                        <div class="itinerary-stats">
+                            <span><i class="bi bi-person"></i> {{ itinerary.author.username }}</span>
+                            <span><i class="bi bi-eye"></i> {{ itinerary.view_count or 0 }}</span>
+                            <span><i class="bi bi-heart"></i> {{ itinerary.like_count or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

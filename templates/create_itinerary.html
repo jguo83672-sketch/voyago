@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}创建行程 - Voyago{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> 创建新行程</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="itinerary-form" enctype="multipart/form-data">
+                    <h5 class="mb-3">基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="title" class="form-label">行程标题</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">目的地 <small class="text-muted">（可多选）</small></label>
+                        <div class="border p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                            {% for destination in destinations %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="dest_{{ destination.id }}" 
+                                       name="destination_ids" 
+                                       value="{{ destination.id }}">
+                                <label class="form-check-label" for="dest_{{ destination.id }}">
+                                    {{ destination.name }} - {{ destination.country }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text">选择一个或多个目的地，支持跨地区旅行规划</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">行程描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cover_image" class="form-label">封面图片</label>
+                        <input type="file" class="form-control" id="cover_image" name="cover_image" 
+                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB</div>
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="days" class="form-label">行程天数</label>
+                            <input type="number" class="form-control" id="days" name="days" min="1" max="30" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="start_date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="end_date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="budget" class="form-label">预算 (元)</label>
+                            <input type="number" class="form-control" id="budget" name="budget" min="0">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3">每日行程安排</h5>
+                    <div id="days-container">
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('itineraries') }}" class="btn btn-secondary">取消</a>
+                        <button type="submit" class="btn btn-primary">创建行程</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('days').addEventListener('change', function() {
+    const days = parseInt(this.value);
+    const container = document.getElementById('days-container');
+    container.innerHTML = '';
+    
+    for (let i = 1; i <= days; i++) {
+        const dayHTML = `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">第 ${i} 天</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">标题</label>
+                        <input type="text" class="form-control" name="day_${i}_title" placeholder="第${i}天行程标题">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" name="day_${i}_description" rows="2" placeholder="描述当天的行程安排"></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">活动 (每行一个活动)</label>
+                        <textarea class="form-control" name="day_${i}_activities" rows="3" placeholder="早餐&#10;参观景点A&#10;午餐&#10;参观景点B"></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += dayHTML;
+    }
+});
+
+document.getElementById('cover_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+    
+    if (file) {
+        if (file.size > 16 * 1024 * 1024) {
+            alert('文件大小不能超过 16MB');
+            this.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <div class="border p-3 rounded">
+                    <p class="mb-2">预览:</p>
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
+                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}
