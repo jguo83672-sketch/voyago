@@ -4,11 +4,15 @@ from app import app, db
 from models import (
     User, Destination, Itinerary, ItineraryDay, Guide, Comment, Comment2,
     Favorite, Favorite2, Community, CommunityMember, CommunityEvent, EventRegistration,
-    TravelFootprint
+    TravelFootprint, TravelPrep, HotelRecommendation, FlightRecommendation,
+    TravelProduct, ProductReview, CartItem, Order, OrderItem
 )
 from datetime import datetime
 import json
+import uuid
 from utils import save_upload_file, delete_file
+from ai_planner import create_planner
+from travel_prep import create_prep_service
 
 @app.route('/')
 def index():
@@ -1041,9 +1045,12 @@ def delete_footprint(id):
 
 # 编辑足迹
 @app.route('/footprint/<int:id>/edit', methods=['GET', 'POST'])
+@app.route('/edit-footprint/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_footprint(id):
+    """编辑足迹"""
     footprint = TravelFootprint.query.get_or_404(id)
+
     if footprint.user_id != current_user.id:
         flash('您没有权限编辑此足迹！', 'danger')
         return redirect(url_for('profile'))
@@ -1060,4 +1067,721 @@ def edit_footprint(id):
 
     destinations = Destination.query.all()
     return render_template('edit_footprint.html', footprint=footprint, destinations=destinations)
+
+
+# ==================== AI行程规划功能 ====================
+@app.route('/ai-planner')
+@login_required
+def ai_planner_page():
+    """AI行程规划页面"""
+    destinations = Destination.query.all()
+    return render_template('ai_planner.html', destinations=destinations)
+
+
+@app.route('/test-ai-api')
+@login_required
+def test_ai_api_page():
+    """AI API测试页面"""
+    return render_template('test_ai_api.html')
+
+
+@app.route('/api/ai/plan', methods=['POST'])
+@login_required
+def ai_plan_itinerary():
+    """AI规划行程API"""
+    import traceback
+
+    try:
+        data = request.get_json()
+
+        if not data:
+            print("[AI Plan] Error: No JSON data received")
+            return jsonify({'success': False, 'message': '请求数据为空'}), 400
+
+        # 获取用户输入
+        destination_name = data.get('destination')
+        destination_id = data.get('destination_id')
+        days = int(data.get('days', 3))
+        budget = data.get('budget')
+        start_date = data.get('start_date')
+        travelers = int(data.get('travelers', 1))
+        interests = data.get('interests', [])
+        style = data.get('style', '休闲舒适')
+        special_needs = data.get('special_needs', '')
+
+        print(f"[AI Plan] Request: destination={destination_name}, days={days}, budget={budget}")
+
+        if not destination_name:
+            return jsonify({'success': False, 'message': '请选择目的地'}), 400
+
+        if days < 1 or days > 30:
+            return jsonify({'success': False, 'message': '天数必须在1-30天之间'}), 400
+
+        # 创建AI规划器
+        print("[AI Plan] Creating planner...")
+        planner = create_planner()
+
+        # 收集上下文数据
+        context_data = {}
+
+        # 收集目的地信息
+        print("[AI Plan] Collecting destination data...")
+        if destination_id:
+            destination = Destination.query.get(destination_id)
+            if destination:
+                destinations_data = [{
+                    'name': destination.name,
+                    'country': destination.country,
+                    'city': destination.city,
+                    'description': destination.description,
+                    'rating': destination.rating,
+                    'tags': destination.tags
+                }]
+            else:
+                destinations_data = []
+        else:
+            # 根据名称搜索相似目的地
+            destinations = Destination.query.filter(
+                Destination.name.contains(destination_name)
+            ).limit(3).all()
+            destinations_data = [{
+                'name': d.name,
+                'country': d.country,
+                'city': d.city,
+                'description': d.description,
+                'rating': d.rating,
+                'tags': d.tags
+            } for d in destinations]
+
+        context_data['destinations'] = planner.collect_destination_data(destinations_data)
+
+        # 收集相关攻略
+        print("[AI Plan] Collecting guide data...")
+        if destination_id:
+            guides = Guide.query.filter_by(
+                destination_id=destination_id,
+                is_published=True
+            ).limit(5).all()
+        else:
+            guides = Guide.query.filter_by(is_published=True).limit(5).all()
+
+        guides_data = [{
+            'title': g.title,
+            'content': g.content,
+            'category': g.category,
+            'view_count': g.view_count
+        } for g in guides]
+        context_data['guides'] = planner.collect_guide_data(guides_data)
+
+        # 收集参考行程
+        print("[AI Plan] Collecting itinerary data...")
+        itineraries = Itinerary.query.filter_by(is_public=True).limit(3).all()
+        itineraries_data = [{
+            'title': i.title,
+            'days': i.days,
+            'budget': i.budget,
+            'description': i.description
+        } for i in itineraries]
+        context_data['itineraries'] = planner.collect_itinerary_data(itineraries_data)
+
+        # 调用AI规划
+        print("[AI Plan] Calling AI...")
+        result = planner.plan_itinerary(
+            destination=destination_name,
+            days=days,
+            budget=float(budget) if budget and budget.strip() else None,
+            start_date=start_date,
+            travelers=travelers,
+            interests=interests or [],
+            style=style,
+            special_needs=special_needs,
+            context_data=context_data
+        )
+
+        print(f"[AI Plan] Result: success={result.get('success')}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"[AI Plan] Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ai/suggest', methods=['POST'])
+@login_required
+def ai_suggest_destinations():
+    """AI推荐目的地API"""
+    try:
+        data = request.get_json()
+        if not data:
+            print("[AI Suggest] Error: No JSON data received")
+            return jsonify({'success': False, 'message': '请求数据为空'}), 400
+
+        interests = data.get('interests', [])
+        days = int(data.get('days', 3))
+        budget = data.get('budget')
+
+        # 确保interests不为None
+        if interests is None:
+            interests = []
+
+        # 转换budget
+        budget_value = None
+        if budget and str(budget).strip():
+            try:
+                budget_value = float(budget)
+            except ValueError:
+                pass
+
+        planner = create_planner()
+        result = planner.suggest_destinations(interests, days, budget_value)
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"[AI Suggest] Error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ai/save-itinerary', methods=['POST'])
+@login_required
+def save_ai_itinerary():
+    """保存AI生成的行程"""
+    try:
+        data = request.get_json()
+        itinerary_data = data.get('itinerary')
+
+        if not itinerary_data:
+            return jsonify({'success': False, 'message': '行程数据为空'}), 400
+
+        # 创建行程
+        itinerary = Itinerary(
+            title=f"{itinerary_data.get('destination', '')} - {itinerary_data.get('days', 3)}天行程",
+            description=itinerary_data.get('summary', ''),
+            days=itinerary_data.get('days', 3),
+            budget=float(itinerary_data.get('total_budget', '0').replace('元', '')) if itinerary_data.get('total_budget') else None,
+            user_id=current_user.id,
+            is_public=True
+        )
+
+        db.session.add(itinerary)
+        db.session.flush()
+
+        # 创建每日行程
+        daily_plans = itinerary_data.get('daily_plans', [])
+        for day_plan in daily_plans:
+            day = ItineraryDay(
+                itinerary_id=itinerary.id,
+                day_number=day_plan.get('day', 1),
+                title=day_plan.get('title', ''),
+                description=day_plan.get('description', ''),
+                activities=json.dumps(day_plan.get('activities', []), ensure_ascii=False)
+            )
+            db.session.add(day)
+
+        db.session.commit()
+        flash('行程保存成功！', 'success')
+        return jsonify({'success': True, 'itinerary_id': itinerary.id})
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Save Itinerary] Error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== 出行准备功能 ====================
+@app.route('/itinerary/<int:itinerary_id>/prepare', methods=['GET', 'POST'])
+@login_required
+def itinerary_prepare(itinerary_id):
+    """行程准备页面"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+
+    if itinerary.user_id != current_user.id:
+        flash('您没有权限访问此页面', 'danger')
+        return redirect(url_for('itineraries'))
+
+    # 获取或创建准备信息
+    prep = TravelPrep.query.filter_by(itinerary_id=itinerary_id).first()
+
+    # 设置默认日期
+    check_in = prep.check_in if prep else None
+    check_out = prep.check_out if prep else None
+    destination = itinerary.primary_destination
+
+    if request.method == 'POST':
+        # 保存准备信息
+        data = request.form
+
+        if not prep:
+            prep = TravelPrep(
+                itinerary_id=itinerary_id,
+                check_in=datetime.strptime(data['check_in'], '%Y-%m-%d') if data.get('check_in') else None,
+                check_out=datetime.strptime(data['check_out'], '%Y-%m-%d') if data.get('check_out') else None,
+                guests=int(data['guest_count']),
+                budget=float(data['budget']) if data.get('budget') else None,
+                notes=data.get('notes', '')
+            )
+            db.session.add(prep)
+        else:
+            prep.check_in = datetime.strptime(data['check_in'], '%Y-%m-%d') if data.get('check_in') else None
+            prep.check_out = datetime.strptime(data['check_out'], '%Y-%m-%d') if data.get('check_out') else None
+            prep.guests = int(data['guest_count'])
+            prep.budget = float(data['budget']) if data.get('budget') else None
+            prep.notes = data.get('notes', '')
+
+        db.session.commit()
+        flash('准备信息保存成功！', 'success')
+        return redirect(url_for('itinerary_prepare', itinerary_id=itinerary_id))
+
+    return render_template('itinerary_prepare.html',
+                         itinerary=itinerary,
+                         prep=prep,
+                         check_in=check_in,
+                         check_out=check_out,
+                         destination=destination)
+
+
+@app.route('/itinerary/<int:itinerary_id>/prepare/save', methods=['POST'])
+@login_required
+def save_itinerary_prep(itinerary_id):
+    """保存准备信息（AJAX）"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    try:
+        data = request.form
+
+        prep = TravelPrep.query.filter_by(itinerary_id=itinerary_id).first()
+        if not prep:
+            prep = TravelPrep(
+                itinerary_id=itinerary_id,
+                check_in=datetime.strptime(data['check_in'], '%Y-%m-%d') if data.get('check_in') else None,
+                check_out=datetime.strptime(data['check_out'], '%Y-%m-%d') if data.get('check_out') else None,
+                guests=int(data['guest_count']),
+                budget=float(data['budget']) if data.get('budget') else None,
+                notes=data.get('notes', '')
+            )
+            db.session.add(prep)
+        else:
+            prep.check_in = datetime.strptime(data['check_in'], '%Y-%m-%d') if data.get('check_in') else None
+            prep.check_out = datetime.strptime(data['check_out'], '%Y-%m-%d') if data.get('check_out') else None
+            prep.guests = int(data['guest_count'])
+            prep.budget = float(data['budget']) if data.get('budget') else None
+            prep.notes = data.get('notes', '')
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': '保存成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/itinerary/<int:itinerary_id>/hotels', methods=['GET', 'POST'])
+@login_required
+def get_hotel_recommendations(itinerary_id):
+    """获取酒店推荐"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    prep = TravelPrep.query.filter_by(itinerary_id=itinerary_id).first()
+    if not prep:
+        return jsonify({'success': False, 'message': '请先填写准备信息'}), 400
+
+    prep_service = create_prep_service()
+
+    try:
+        if request.method == 'POST':
+            # 生成推荐
+            data = request.get_json()
+            departure_city = data.get('departure_city', '北京')
+
+            destination = itinerary.primary_destination
+            if not destination:
+                destination = Destination.query.first()
+
+            arrival_city = destination.city if destination else '上海'
+            check_in = prep.check_in.strftime('%Y-%m-%d') if prep.check_in else None
+            check_out = prep.check_out.strftime('%Y-%m-%d') if prep.check_out else None
+            budget = prep.budget
+            guests = prep.guests
+
+            hotels = prep_service.get_hotel_recommendations(
+                departure_city=departure_city,
+                arrival_city=arrival_city,
+                check_in=check_in,
+                check_out=check_out,
+                budget=budget,
+                guests=guests
+            )
+
+            # 清除旧推荐
+            HotelRecommendation.query.filter_by(prep_id=prep.id).delete()
+
+            # 保存新推荐
+            for hotel_data in hotels:
+                hotel = HotelRecommendation(
+                    prep_id=prep.id,
+                    hotel_name=hotel_data['name'],
+                    rating=hotel_data['rating'],
+                    price_per_night=hotel_data['price_per_night'],
+                    location=hotel_data['location'],
+                    amenities=json.dumps(hotel_data['amenities'], ensure_ascii=False),
+                    image_url=hotel_data.get('image'),
+                    booking_url=hotel_data.get('booking_url'),
+                    source=hotel_data.get('source', 'Voyago')
+                )
+                db.session.add(hotel)
+
+            db.session.commit()
+
+        return jsonify({'success': True, 'hotels': hotels})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/itinerary/<int:itinerary_id>/flights', methods=['GET', 'POST'])
+@login_required
+def get_flight_recommendations(itinerary_id):
+    """获取机票推荐"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    prep = TravelPrep.query.filter_by(itinerary_id=itinerary_id).first()
+    if not prep:
+        return jsonify({'success': False, 'message': '请先填写准备信息'}), 400
+
+    prep_service = create_prep_service()
+
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            departure_city = data.get('departure_city', '北京')
+            arrival_city = data.get('arrival_city')
+            travel_date = data.get('travel_date')
+            budget = data.get('budget')
+
+            if not arrival_city:
+                destination = itinerary.primary_destination
+                arrival_city = destination.city if destination else '上海'
+
+            flights = prep_service.get_flight_recommendations(
+                departure_city=departure_city,
+                arrival_city=arrival_city,
+                travel_date=travel_date,
+                budget=budget
+            )
+
+            # 清除旧推荐
+            FlightRecommendation.query.filter_by(prep_id=prep.id).delete()
+
+            # 保存新推荐
+            for flight_data in flights:
+                flight = FlightRecommendation(
+                    prep_id=prep.id,
+                    airline=flight_data['airline'],
+                    flight_number=flight_data['flight_number'],
+                    departure_time=flight_data['departure_time'],
+                    arrival_time=flight_data['arrival_time'],
+                    duration=flight_data['duration'],
+                    stops=flight_data['stops'],
+                    price=flight_data['price'],
+                    booking_url=flight_data.get('booking_url'),
+                    source=flight_data.get('source', 'Voyago')
+                )
+                db.session.add(flight)
+
+            db.session.commit()
+
+        return jsonify({'success': True, 'flights': flights})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ==================== 旅行商店功能 ====================
+@app.route('/travel-shop')
+def travel_shop():
+    """旅行用品商店"""
+    page = request.args.get('page', 1, type=int)
+    category = request.args.get('category')
+    sort = request.args.get('sort', 'default')
+
+    query = TravelProduct.query.filter_by(is_available=True)
+
+    if category:
+        query = query.filter_by(category=category)
+
+    # 排序
+    if sort == 'sales':
+        query = query.order_by(TravelProduct.sales_count.desc())
+    elif sort == 'price_asc':
+        query = query.order_by(TravelProduct.price.asc())
+    elif sort == 'price_desc':
+        query = query.order_by(TravelProduct.price.desc())
+    elif sort == 'rating':
+        query = query.order_by(TravelProduct.rating.desc())
+    else:
+        query = query.order_by(TravelProduct.created_at.desc())
+
+    products = query.paginate(page=page, per_page=12, error_out=False)
+    categories = db.session.query(TravelProduct.category.distinct()).all()
+
+    # 精选商品
+    featured_products = TravelProduct.query.filter_by(
+        is_featured=True,
+        is_available=True
+    ).limit(3).all()
+
+    return render_template('travel_shop.html',
+                         products=products,
+                         categories=categories,
+                         current_category=category,
+                         current_sort=sort,
+                         featured_products=featured_products)
+
+
+@app.route('/travel-shop/product/<int:id>')
+def product_detail(id):
+    """商品详情"""
+    product = TravelProduct.query.get_or_404(id)
+
+    # 相关商品
+    related_products = TravelProduct.query.filter(
+        TravelProduct.category == product.category,
+        TravelProduct.id != product.id,
+        TravelProduct.is_available == True
+    ).limit(4).all()
+
+    # 评价
+    reviews = ProductReview.query.filter_by(product_id=id).order_by(
+        ProductReview.created_at.desc()
+    ).limit(10).all()
+
+    return render_template('product_detail.html',
+                         product=product,
+                         related_products=related_products,
+                         reviews=reviews)
+
+
+@app.route('/cart')
+@login_required
+def cart():
+    """购物车"""
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    total = sum(item.subtotal for item in cart_items)
+    return render_template('cart.html', cart_items=cart_items, total=total)
+
+
+@app.route('/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    """添加到购物车"""
+    product = TravelProduct.query.get_or_404(product_id)
+
+    if not product.is_available:
+        return jsonify({'success': False, 'message': '商品已下架'}), 400
+
+    if product.stock <= 0:
+        return jsonify({'success': False, 'message': '库存不足'}), 400
+
+    # 检查是否已在购物车
+    existing_item = CartItem.query.filter_by(
+        user_id=current_user.id,
+        product_id=product_id
+    ).first()
+
+    if existing_item:
+        existing_item.quantity += 1
+    else:
+        cart_item = CartItem(
+            user_id=current_user.id,
+            product_id=product_id,
+            quantity=1
+        )
+        db.session.add(cart_item)
+
+    db.session.commit()
+
+    # 获取购物车数量
+    cart_count = CartItem.query.filter_by(user_id=current_user.id).count()
+
+    return jsonify({'success': True, 'message': '已添加到购物车', 'cart_count': cart_count})
+
+
+@app.route('/cart/update/<int:item_id>', methods=['POST'])
+@login_required
+def update_cart_item(item_id):
+    """更新购物车"""
+    item = CartItem.query.get_or_404(item_id)
+
+    if item.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    quantity = int(request.form.get('quantity', 1))
+    if quantity < 1:
+        return jsonify({'success': False, 'message': '数量必须大于0'}), 400
+
+    item.quantity = quantity
+    db.session.commit()
+
+    cart_count = CartItem.query.filter_by(user_id=current_user.id).count()
+    return jsonify({'success': True, 'cart_count': cart_count})
+
+
+@app.route('/cart/remove/<int:item_id>', methods=['POST'])
+@login_required
+def remove_from_cart(item_id):
+    """从购物车移除"""
+    item = CartItem.query.get_or_404(item_id)
+
+    if item.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    db.session.delete(item)
+    db.session.commit()
+
+    cart_count = CartItem.query.filter_by(user_id=current_user.id).count()
+    return jsonify({'success': True, 'cart_count': cart_count})
+
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    """结账页面"""
+    if request.method == 'GET':
+        cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+
+        if not cart_items:
+            flash('购物车为空', 'warning')
+            return redirect(url_for('travel_shop'))
+
+        total = sum(item.subtotal for item in cart_items)
+        shipping_fee = 0 if total >= 200 else 15
+        final_total = total + shipping_fee
+
+        return render_template('checkout.html',
+                             cart_items=cart_items,
+                             total=total,
+                             shipping_fee=shipping_fee,
+                             final_total=final_total)
+
+    else:
+        # POST处理 - 创建订单
+        try:
+            cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+
+            if not cart_items:
+                return jsonify({'success': False, 'message': '购物车为空'}), 400
+
+            total = sum(item.subtotal for item in cart_items)
+            shipping_fee = 0 if total >= 200 else 15
+            final_total = total + shipping_fee
+
+            # 生成订单号
+            order_number = f"VOY{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6].upper()}"
+
+            # 创建订单
+            order = Order(
+                order_number=order_number,
+                user_id=current_user.id,
+                recipient_name=request.form.get('recipient_name'),
+                recipient_phone=request.form.get('recipient_phone'),
+                province=request.form.get('province'),
+                city=request.form.get('city'),
+                district=request.form.get('district'),
+                address=request.form.get('address'),
+                postal_code=request.form.get('postal_code'),
+                total_amount=total,
+                shipping_fee=shipping_fee,
+                final_amount=final_total,
+                payment_method=request.form.get('payment_method'),
+                payment_status='pending',
+                status='pending',
+                notes=request.form.get('notes', '')
+            )
+            db.session.add(order)
+            db.session.flush()
+
+            # 创建订单项
+            for item in cart_items:
+                order_item = OrderItem(
+                    order_id=order.id,
+                    product_id=item.product_id,
+                    product_name=item.product.name,
+                    product_price=item.product.price,
+                    quantity=item.quantity,
+                    subtotal=item.subtotal
+                )
+                db.session.add(order_item)
+
+            # 清空购物车
+            CartItem.query.filter_by(user_id=current_user.id).delete()
+
+            db.session.commit()
+            flash('订单创建成功！', 'success')
+            return jsonify({'success': True, 'order_id': order.id})
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"[Checkout] Error: {str(e)}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/orders')
+@login_required
+def orders():
+    """我的订单"""
+    status = request.args.get('status', 'all')
+    page = request.args.get('page', 1, type=int)
+
+    query = Order.query.filter_by(user_id=current_user.id)
+
+    if status != 'all':
+        query = query.filter_by(status=status)
+
+    orders = query.order_by(Order.created_at.desc()).paginate(
+        page=page, per_page=10, error_out=False
+    )
+
+    return render_template('orders.html', orders=orders, current_status=status)
+
+
+@app.route('/order/<int:id>')
+@login_required
+def order_detail(id):
+    """订单详情"""
+    order = Order.query.get_or_404(id)
+
+    if order.user_id != current_user.id:
+        flash('您没有权限查看此订单', 'danger')
+        return redirect(url_for('orders'))
+
+    return render_template('order_detail.html', order=order)
+
+
+# 全局上下文处理器
+@app.context_processor
+def inject_user_data():
+    """为所有模板提供全局数据"""
+    user_itineraries = []
+    if current_user.is_authenticated:
+        user_itineraries = Itinerary.query.filter_by(
+            user_id=current_user.id
+        ).order_by(Itinerary.created_at.desc()).limit(3).all()
+
+    return {
+        'user_itineraries': user_itineraries
+    }
 
