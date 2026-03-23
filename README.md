@@ -5,6 +5,17 @@
 ![Voyago](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.10+-green)
 ![Flask](https://img.shields.io/badge/flask-3.0.0-red)
+![GitHub](https://img.shields.io/badge/GitHub-Team%20Collaboration-green)
+
+## 📋 项目说明
+
+**当前版本：** v1.0.0
+
+**仓库分支：**
+- `main` - 生产环境（稳定版本）
+- `develop` - 开发环境（团队协作分支）
+
+**团队协作：** 请查看 [团队协作指南](TEAM_COLLABORATION.md) 了解开发流程
 
 ## 核心功能
 
