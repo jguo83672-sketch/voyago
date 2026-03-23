@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}OCR 导入攻略 - Voyago{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-camera"></i> OCR 导入攻略
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>功能说明：</strong>
+                        上传来自其他平台的攻略截图或图片，系统将自动识别文字内容并进行分类整理。
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="ocrForm">
+                        <div class="mb-4">
+                            <label for="guide_image" class="form-label">
+                                <i class="bi bi-image"></i> 选择攻略图片
+                            </label>
+                            <input type="file" class="form-control" id="guide_image" name="guide_image"
+                                   accept="image/*" required>
+                            <div class="form-text">
+                                支持 JPG、PNG、JPEG 等常见图片格式
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="preview-container" style="display: none;">
+                            <label class="form-label">图片预览</label>
+                            <div class="text-center">
+                                <img id="image-preview" src="" alt="预览" class="img-fluid rounded"
+                                     style="max-height: 400px;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-magic"></i> 开始识别
+                            </button>
+                            <a href="{{ url_for('create_guide') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> 取消
+                            </a>
+                        </div>
+                    </form>
+
+                    <div id="loading" class="text-center mt-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-2">正在识别文字，请稍候...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> 使用技巧
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            确保图片清晰，文字可见
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            避免图片过暗或有反光
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            系统会自动分类（美食、交通、住宿等）
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            自动提取目的地信息
+                        </li>
+                        <li>
+                            <i class="bi bi-check-circle text-success"></i>
+                            生成建议标题，可手动修改
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 图片预览
+document.getElementById('guide_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('image-preview').src = e.target.result;
+            document.getElementById('preview-container').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('preview-container').style.display = 'none';
+    }
+});
+
+// 提交表单
+document.getElementById('ocrForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+
+    // 使用 FormData 提交
+    const formData = new FormData(this);
+    fetch('{{ url_for("ocr_analyze") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 将识别结果传递到创建攻略页面
+            const params = new URLSearchParams();
+            params.append('title', data.data.title);
+            params.append('content', data.data.content);
+            params.append('category', data.data.category);
+            if (data.data.destination_id) {
+                params.append('destination_id', data.data.destination_id);
+            }
+            window.location.href = `{{ url_for('create_guide') }}?${params.toString()}`;
+        } else {
+            alert('识别失败: ' + data.error);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('请求失败: ' + error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

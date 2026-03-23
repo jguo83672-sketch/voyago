@@ -11,8 +11,15 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///voyago.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# 百度 OCR 配置
+app.config['BAIDU_OCR_API_KEY'] = os.getenv('BAIDU_OCR_API_KEY', '2BQropxwTK1upuWv8TKQ37iy')
+app.config['BAIDU_OCR_SECRET_KEY'] = os.getenv('BAIDU_OCR_SECRET_KEY', 'CPGDTRAfJjif1FzBe3wW5B7wO6C2y2CE')
+
+# DeepSeek AI 配置
+app.config['DEEPSEEK_API_KEY'] = os.getenv('DEEPSEEK_API_KEY', '')
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)

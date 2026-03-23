@@ -61,8 +61,19 @@ class Destination(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    country = db.Column(db.String(100), nullable=False)
+
+    # 地理分类
+    region_type = db.Column(db.String(20), nullable=False, default='domestic')  # domestic(境内), international(境外), cruise(邮轮), weekend(周末近郊), theme(主题乐园)
+
+    # 境内字段
+    province = db.Column(db.String(50))  # 省份(境内)
+
+    # 境外字段
+    continent = db.Column(db.String(50))  # 大洲(境外)
+    area = db.Column(db.String(50))  # 地区(境外),如东南亚、西欧等
+    country = db.Column(db.String(100))  # 国家
     city = db.Column(db.String(100))
+
     description = db.Column(db.Text)
     cover_image = db.Column(db.String(200))
     rating = db.Column(db.Float, default=0)
@@ -81,6 +92,22 @@ class Destination(db.Model):
     @property
     def tags_list(self):
         return self.tags.split(',') if self.tags else []
+
+    @property
+    def display_location(self):
+        """显示完整地址"""
+        if self.region_type == 'domestic':
+            return f"{self.province}" if self.province else self.name
+        elif self.region_type == 'cruise':
+            return f"{self.province} - {self.name}" if self.province else self.name
+        elif self.region_type == 'weekend':
+            return f"{self.province} - {self.name}" if self.province else self.name
+        elif self.region_type == 'theme':
+            return f"{self.province} - {self.name}" if self.province else self.name
+        else:
+            parts = [self.continent, self.area, self.country]
+            parts = [p for p in parts if p]
+            return " - ".join(parts) if parts else self.name
 
     def __repr__(self):
         return f'<Destination {self.name}>'
@@ -353,3 +380,266 @@ class TravelFootprint(db.Model):
 
     def __repr__(self):
         return f'<TravelFootprint {self.user_id} visited {self.destination_id}>'
+
+
+# ==================== 旅行准备模块相关模型 ====================
+
+class TravelPrep(db.Model):
+    """旅行准备记录"""
+    __tablename__ = 'travel_preps'
+
+    id = db.Column(db.Integer, primary_key=True)
+    itinerary_id = db.Column(db.Integer, db.ForeignKey('itineraries.id'), nullable=False)
+    check_in_date = db.Column(db.Date, nullable=False)
+    check_out_date = db.Column(db.Date, nullable=False)
+    guest_count = db.Column(db.Integer, default=1)
+    budget = db.Column(db.Float)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    itinerary = db.relationship('Itinerary', backref='travel_prep', uselist=False)
+    hotel_recommendations = db.relationship('HotelRecommendation', backref='prep', lazy=True, cascade='all, delete-orphan')
+    flight_recommendations = db.relationship('FlightRecommendation', backref='prep', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<TravelPrep for itinerary {self.itinerary_id}>'
+
+
+class HotelRecommendation(db.Model):
+    """酒店推荐记录"""
+    __tablename__ = 'hotel_recommendations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    prep_id = db.Column(db.Integer, db.ForeignKey('travel_preps.id'), nullable=False)
+
+    hotel_name = db.Column(db.String(200), nullable=False)
+    rating = db.Column(db.Float)
+    price_per_night = db.Column(db.Float)
+    currency = db.Column(db.String(10), default='CNY')
+    location = db.Column(db.String(500))
+    amenities = db.Column(db.Text)  # JSON格式存储设施列表
+    image_url = db.Column(db.String(500))
+    booking_url = db.Column(db.String(500))
+    source = db.Column(db.String(50))  # 推荐来源
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def amenities_list(self):
+        import json
+        if not self.amenities:
+            return []
+        try:
+            return json.loads(self.amenities)
+        except json.JSONDecodeError:
+            return []
+
+    def __repr__(self):
+        return f'<HotelRecommendation {self.hotel_name}>'
+
+
+class FlightRecommendation(db.Model):
+    """机票推荐记录"""
+    __tablename__ = 'flight_recommendations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    prep_id = db.Column(db.Integer, db.ForeignKey('travel_preps.id'), nullable=False)
+
+    airline = db.Column(db.String(100), nullable=False)
+    flight_number = db.Column(db.String(50))
+    departure_city = db.Column(db.String(100), nullable=False)
+    arrival_city = db.Column(db.String(100), nullable=False)
+    departure_time = db.Column(db.DateTime)
+    arrival_time = db.Column(db.DateTime)
+    duration = db.Column(db.String(50))  # 如 "2小时30分"
+    price = db.Column(db.Float)
+    currency = db.Column(db.String(10), default='CNY')
+    class_type = db.Column(db.String(20))  # 经济舱、商务舱等
+    stops = db.Column(db.Integer, default=0)  # 中转次数
+    booking_url = db.Column(db.String(500))
+    source = db.Column(db.String(50))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<FlightRecommendation {self.airline} {self.flight_number}>'
+
+
+class TravelProduct(db.Model):
+    """旅行用品商品"""
+    __tablename__ = 'travel_products'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(50))  # 行李箱、洗漱包、一次性用品、转换插头、电话卡等
+    subcategory = db.Column(db.String(50))
+    brand = db.Column(db.String(100))
+
+    price = db.Column(db.Float, nullable=False)
+    original_price = db.Column(db.Float)
+    currency = db.Column(db.String(10), default='CNY')
+    stock = db.Column(db.Integer, default=100)
+
+    image_url = db.Column(db.String(500))
+    images = db.Column(db.Text)  # JSON格式存储多张图片URL
+    specifications = db.Column(db.Text)  # JSON格式存储规格参数
+
+    rating = db.Column(db.Float, default=0)
+    review_count = db.Column(db.Integer, default=0)
+    sales_count = db.Column(db.Integer, default=0)
+
+    is_featured = db.Column(db.Boolean, default=False)  # 是否为精选商品
+    is_available = db.Column(db.Boolean, default=True)
+    tags = db.Column(db.String(200))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def tags_list(self):
+        return self.tags.split(',') if self.tags else []
+
+    @property
+    def images_list(self):
+        import json
+        if not self.images:
+            return []
+        try:
+            return json.loads(self.images)
+        except json.JSONDecodeError:
+            return []
+
+    @property
+    def discount_percent(self):
+        if self.original_price and self.original_price > self.price:
+            return int((self.original_price - self.price) / self.original_price * 100)
+        return 0
+
+    def __repr__(self):
+        return f'<TravelProduct {self.name}>'
+
+
+class ProductReview(db.Model):
+    """商品评论"""
+    __tablename__ = 'product_reviews'
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('travel_products.id'), nullable=False)
+
+    rating = db.Column(db.Integer)  # 1-5星
+    content = db.Column(db.Text)
+    images = db.Column(db.Text)  # JSON格式存储图片URL列表
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    product = db.relationship('TravelProduct', backref='reviews')
+
+    @property
+    def images_list(self):
+        import json
+        if not self.images:
+            return []
+        try:
+            return json.loads(self.images)
+        except json.JSONDecodeError:
+            return []
+
+    def __repr__(self):
+        return f'<ProductReview {self.id}>'
+
+
+class CartItem(db.Model):
+    """购物车商品"""
+    __tablename__ = 'cart_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('travel_products.id'), nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    product = db.relationship('TravelProduct')
+
+    @property
+    def subtotal(self):
+        return self.product.price * self.quantity if self.product else 0
+
+    def __repr__(self):
+        return f'<CartItem {self.product_id} x{self.quantity}>'
+
+
+class Order(db.Model):
+    """订单"""
+    __tablename__ = 'orders'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String(50), unique=True, nullable=False)
+
+    recipient_name = db.Column(db.String(100), nullable=False)
+    recipient_phone = db.Column(db.String(20), nullable=False)
+    province = db.Column(db.String(50))
+    city = db.Column(db.String(50))
+    district = db.Column(db.String(50))
+    address = db.Column(db.String(500), nullable=False)
+    postal_code = db.Column(db.String(20))
+
+    total_amount = db.Column(db.Float, nullable=False)
+    discount_amount = db.Column(db.Float, default=0)
+    shipping_fee = db.Column(db.Float, default=0)
+    final_amount = db.Column(db.Float, nullable=False)
+
+    payment_method = db.Column(db.String(20))  # wechat, alipay, credit_card
+    payment_status = db.Column(db.String(20), default='pending')  # pending, paid, failed
+    payment_time = db.Column(db.DateTime)
+
+    status = db.Column(db.String(20), default='pending')  # pending, paid, shipped, delivered, cancelled
+    tracking_number = db.Column(db.String(100))
+    shipped_at = db.Column(db.DateTime)
+    delivered_at = db.Column(db.DateTime)
+
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
+
+    @property
+    def item_count(self):
+        return len(self.items)
+
+    def __repr__(self):
+        return f'<Order {self.order_number}>'
+
+
+class OrderItem(db.Model):
+    """订单商品项"""
+    __tablename__ = 'order_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('travel_products.id'), nullable=False)
+
+    product_name = db.Column(db.String(200), nullable=False)
+    product_image = db.Column(db.String(500))
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    subtotal = db.Column(db.Float, nullable=False)
+
+    product = db.relationship('TravelProduct')
+
+    def __repr__(self):
+        return f'<OrderItem {self.product_name} x{self.quantity}>'

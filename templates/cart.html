@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}购物车 - Voyago{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('travel_shop') }}">旅行用品商店</a></li>
+            <li class="breadcrumb-item active">购物车</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="fas fa-shopping-cart"></i> 购物车</h2>
+
+    {% if cart_items %}
+    <div class="row">
+        <!-- 购物车商品列表 -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>商品</th>
+                                    <th>单价</th>
+                                    <th>数量</th>
+                                    <th>小计</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.product.image_url or 'https://via.placeholder.com/100x100' }}"
+                                                 class="mr-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                            <div>
+                                                <h6 class="mb-0">{{ item.product.name }}</h6>
+                                                <small class="text-muted">{{ item.product.category }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>¥{{ item.product.price }}</td>
+                                    <td>
+                                        <div class="input-group" style="width: 120px;">
+                                            <input type="number" class="form-control" value="{{ item.quantity }}"
+                                                   min="1" max="{{ item.product.stock }}"
+                                                   data-item-id="{{ item.id }}" class="quantity-input">
+                                        </div>
+                                    </td>
+                                    <td class="text-danger font-weight-bold">¥{{ item.subtotal }}</td>
+                                    <td>
+                                        <button class="btn btn-outline-danger btn-sm remove-btn"
+                                                data-item-id="{{ item.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单摘要 -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">订单摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>商品总额</span>
+                        <span>¥{{ total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>运费</span>
+                        <span {% if shipping_fee == 0 %}class="text-success"{% endif %}>
+                            {% if shipping_fee == 0 %}免运费{% else %}¥{{ shipping_fee }}{% endif %}
+                        </span>
+                    </div>
+                    {% if shipping_fee == 0 %}
+                    <div class="alert alert-success small mb-3">
+                        满200元免运费
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <h5 class="mb-0">总计</h5>
+                        <h5 class="mb-0 text-danger">¥{{ final_total }}</h5>
+                    </div>
+                    <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg btn-block mt-4">
+                        <i class="fas fa-credit-card"></i> 去结算
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+        <h3 class="mb-3">购物车是空的</h3>
+        <p class="text-muted mb-4">快去挑选心仪的旅行用品吧！</p>
+        <a href="{{ url_for('travel_shop') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag"></i> 去购物
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// 更新数量
+document.querySelectorAll('.quantity-input').forEach(input => {
+    input.addEventListener('change', function() {
+        const itemId = this.dataset.itemId;
+        const quantity = parseInt(this.value);
+
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+
+        fetch(`{{ url_for('update_cart', item_id=0) }}`.replace('0', itemId), {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('更新失败，请重试', 'danger');
+        });
+    });
+});
+
+// 删除商品
+document.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (!confirm('确定要删除这个商品吗？')) return;
+
+        const itemId = this.dataset.itemId;
+
+        fetch(`{{ url_for('remove_from_cart', item_id=0) }}`.replace('0', itemId), {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('删除失败，请重试', 'danger');
+        });
+    });
+});
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+{% endblock %}

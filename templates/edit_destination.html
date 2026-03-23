@@ -3,109 +3,288 @@
 {% block title %}编辑目的地 - Voyago{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-pencil"></i> 编辑目的地</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    <h5 class="mb-3">基本信息</h5>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">目的地名称 *</label>
-                            <input type="text" class="form-control" id="name" name="name" required
-                                value="{{ destination.name }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="country" class="form-label">国家 *</label>
-                            <input type="text" class="form-control" id="country" name="country" required
-                                value="{{ destination.country }}">
-                        </div>
+<div class="container">
+    <h1><i class="bi bi-pencil"></i> 编辑目的地</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <!-- 地理分类选择 -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">目的地类型</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="region_type" id="domestic" value="domestic"
+                               {% if destination.region_type == 'domestic' %}checked{% endif %}
+                               onchange="toggleFields()">
+                        <label class="btn btn-outline-primary" for="domestic">
+                            <i class="bi bi-house-door"></i> 境内
+                        </label>
+
+                        <input type="radio" class="btn-check" name="region_type" id="international" value="international"
+                               {% if destination.region_type == 'international' %}checked{% endif %}
+                               onchange="toggleFields()">
+                        <label class="btn btn-outline-primary" for="international">
+                            <i class="bi bi-airplane"></i> 境外
+                        </label>
+
+                        <input type="radio" class="btn-check" name="region_type" id="cruise" value="cruise"
+                               {% if destination.region_type == 'cruise' %}checked{% endif %}
+                               onchange="toggleFields()">
+                        <label class="btn btn-outline-primary" for="cruise">
+                            <i class="bi bi-water"></i> 邮轮游
+                        </label>
+
+                        <input type="radio" class="btn-check" name="region_type" id="weekend" value="weekend"
+                               {% if destination.region_type == 'weekend' %}checked{% endif %}
+                               onchange="toggleFields()">
+                        <label class="btn btn-outline-primary" for="weekend">
+                            <i class="bi bi-sun"></i> 周末近郊游
+                        </label>
+
+                        <input type="radio" class="btn-check" name="region_type" id="theme" value="theme"
+                               {% if destination.region_type == 'theme' %}checked{% endif %}
+                               onchange="toggleFields()">
+                        <label class="btn btn-outline-primary" for="theme">
+                            <i class="bi bi-stars"></i> 主题乐园
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 目的地名称 -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">目的地名称 *</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ destination.name }}" required>
+                </div>
+
+                <!-- 境内省份 -->
+                <div class="mb-3" id="province-field" style="display: {% if destination.region_type in ['domestic', 'cruise', 'weekend', 'theme'] %}block{% else %}none{% endif %};">
+                    <label for="province" class="form-label">省份/地区 *</label>
+                    <select class="form-select" id="province" name="province">
+                        <option value="">请选择省份</option>
+                        <option value="北京" {% if destination.province == '北京' %}selected{% endif %}>北京</option>
+                        <option value="上海" {% if destination.province == '上海' %}selected{% endif %}>上海</option>
+                        <option value="天津" {% if destination.province == '天津' %}selected{% endif %}>天津</option>
+                        <option value="河北" {% if destination.province == '河北' %}selected{% endif %}>河北</option>
+                        <option value="山西" {% if destination.province == '山西' %}selected{% endif %}>山西</option>
+                        <option value="内蒙古" {% if destination.province == '内蒙古' %}selected{% endif %}>内蒙古</option>
+                        <option value="辽宁" {% if destination.province == '辽宁' %}selected{% endif %}>辽宁</option>
+                        <option value="吉林" {% if destination.province == '吉林' %}selected{% endif %}>吉林</option>
+                        <option value="黑龙江" {% if destination.province == '黑龙江' %}selected{% endif %}>黑龙江</option>
+                        <option value="江苏" {% if destination.province == '江苏' %}selected{% endif %}>江苏</option>
+                        <option value="浙江" {% if destination.province == '浙江' %}selected{% endif %}>浙江</option>
+                        <option value="安徽" {% if destination.province == '安徽' %}selected{% endif %}>安徽</option>
+                        <option value="福建" {% if destination.province == '福建' %}selected{% endif %}>福建</option>
+                        <option value="江西" {% if destination.province == '江西' %}selected{% endif %}>江西</option>
+                        <option value="山东" {% if destination.province == '山东' %}selected{% endif %}>山东</option>
+                        <option value="河南" {% if destination.province == '河南' %}selected{% endif %}>河南</option>
+                        <option value="湖北" {% if destination.province == '湖北' %}selected{% endif %}>湖北</option>
+                        <option value="湖南" {% if destination.province == '湖南' %}selected{% endif %}>湖南</option>
+                        <option value="广东" {% if destination.province == '广东' %}selected{% endif %}>广东</option>
+                        <option value="广西" {% if destination.province == '广西' %}selected{% endif %}>广西</option>
+                        <option value="海南" {% if destination.province == '海南' %}selected{% endif %}>海南</option>
+                        <option value="重庆" {% if destination.province == '重庆' %}selected{% endif %}>重庆</option>
+                        <option value="四川" {% if destination.province == '四川' %}selected{% endif %}>四川</option>
+                        <option value="贵州" {% if destination.province == '贵州' %}selected{% endif %}>贵州</option>
+                        <option value="云南" {% if destination.province == '云南' %}selected{% endif %}>云南</option>
+                        <option value="西藏" {% if destination.province == '西藏' %}selected{% endif %}>西藏</option>
+                        <option value="陕西" {% if destination.province == '陕西' %}selected{% endif %}>陕西</option>
+                        <option value="甘肃" {% if destination.province == '甘肃' %}selected{% endif %}>甘肃</option>
+                        <option value="青海" {% if destination.province == '青海' %}selected{% endif %}>青海</option>
+                        <option value="宁夏" {% if destination.province == '宁夏' %}selected{% endif %}>宁夏</option>
+                        <option value="新疆" {% if destination.province == '新疆' %}selected{% endif %}>新疆</option>
+                        <option value="香港" {% if destination.province == '香港' %}selected{% endif %}>香港</option>
+                        <option value="澳门" {% if destination.province == '澳门' %}selected{% endif %}>澳门</option>
+                        <option value="台湾" {% if destination.province == '台湾' %}selected{% endif %}>台湾</option>
+                    </select>
+                </div>
+
+                <!-- 境外字段 -->
+                <div class="row" id="international-fields" style="display: {% if destination.region_type == 'international' %}flex{% else %}none{% endif %};">
+                    <div class="col-md-4 mb-3">
+                        <label for="continent" class="form-label">大洲 *</label>
+                        <select class="form-select" id="continent" name="continent" onchange="updateAreas()">
+                            <option value="">请选择大洲</option>
+                            <option value="亚洲" {% if destination.continent == '亚洲' %}selected{% endif %}>亚洲</option>
+                            <option value="欧洲" {% if destination.continent == '欧洲' %}selected{% endif %}>欧洲</option>
+                            <option value="北美洲" {% if destination.continent == '北美洲' %}selected{% endif %}>北美洲</option>
+                            <option value="南美洲" {% if destination.continent == '南美洲' %}selected{% endif %}>南美洲</option>
+                            <option value="非洲" {% if destination.continent == '非洲' %}selected{% endif %}>非洲</option>
+                            <option value="大洋洲" {% if destination.continent == '大洋洲' %}selected{% endif %}>大洋洲</option>
+                        </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="city" class="form-label">城市</label>
-                        <input type="text" class="form-control" id="city" name="city"
-                            value="{{ destination.city }}">
+                    <div class="col-md-4 mb-3">
+                        <label for="area" class="form-label">地区 *</label>
+                        <select class="form-select" id="area" name="area" onchange="updateCountries()">
+                            <option value="">请选择大洲</option>
+                            <option value="东南亚" {% if destination.area == '东南亚' %}selected{% endif %}>东南亚</option>
+                            <option value="东亚" {% if destination.area == '东亚' %}selected{% endif %}>东亚</option>
+                            <option value="南亚" {% if destination.area == '南亚' %}selected{% endif %}>南亚</option>
+                            <option value="西亚" {% if destination.area == '西亚' %}selected{% endif %}>西亚</option>
+                            <option value="西欧" {% if destination.area == '西欧' %}selected{% endif %}>西欧</option>
+                            <option value="南欧" {% if destination.area == '南欧' %}selected{% endif %}>南欧</option>
+                            <option value="北欧" {% if destination.area == '北欧' %}selected{% endif %}>北欧</option>
+                            <option value="东欧" {% if destination.area == '东欧' %}selected{% endif %}>东欧</option>
+                        </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label">目的地描述 *</label>
-                        <textarea class="form-control" id="description" name="description" rows="4" required>{{ destination.description }}</textarea>
+                    <div class="col-md-4 mb-3">
+                        <label for="country" class="form-label">国家 *</label>
+                        <select class="form-select" id="country" name="country">
+                            <option value="">请先选择地区</option>
+                            <option value="{{ destination.country }}" selected>{{ destination.country }}</option>
+                        </select>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="cover_image" class="form-label">封面图片</label>
-                        <input type="file" class="form-control" id="cover_image" name="cover_image"
-                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
-                        <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB。不选择则保留原图片</div>
-                        {% if destination.cover_image %}
-                        <div class="mt-2">
-                            <p class="mb-1">当前封面:</p>
-                            <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}" class="img-fluid rounded" style="max-height: 200px;">
-                        </div>
-                        {% endif %}
-                        <div id="image-preview" class="mt-2"></div>
-                    </div>
+                <!-- 城市名称 -->
+                <div class="mb-3">
+                    <label for="city" class="form-label">城市名称</label>
+                    <input type="text" class="form-control" id="city" name="city" value="{{ destination.city or '' }}">
+                    <div class="form-text">可选,例如: 巴黎、东京、曼谷</div>
+                </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="rating" class="form-label">评分 (0-5)</label>
-                            <input type="number" class="form-control" id="rating" name="rating"
-                                min="0" max="5" step="0.1" value="{{ destination.rating }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="tags" class="form-label">标签</label>
-                            <input type="text" class="form-control" id="tags" name="tags"
-                                value="{{ destination.tags }}"
-                                placeholder="例如: 历史,美食,购物,自然,文化 (用逗号分隔)">
-                        </div>
-                    </div>
+                <!-- 描述 -->
+                <div class="mb-3">
+                    <label for="description" class="form-label">描述 *</label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ destination.description }}</textarea>
+                </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('destination_detail', id=destination.id) }}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> 取消
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> 保存更改
-                        </button>
+                <!-- 封面图片 -->
+                <div class="mb-3">
+                    <label for="cover_image" class="form-label">封面图片</label>
+                    <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
+                    {% if destination.cover_image %}
+                    <div class="mt-2">
+                        <small class="text-muted">当前图片:</small><br>
+                        <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
+                             alt="{{ destination.name }}" style="max-height: 200px;">
                     </div>
-                </form>
-            </div>
+                    {% endif %}
+                    <div class="form-text">推荐尺寸: 800x400 像素</div>
+                </div>
+
+                <!-- 评分 -->
+                <div class="mb-3">
+                    <label for="rating" class="form-label">评分</label>
+                    <input type="number" class="form-control" id="rating" name="rating"
+                           min="0" max="5" step="0.1" value="{{ destination.rating }}">
+                </div>
+
+                <!-- 标签 -->
+                <div class="mb-3">
+                    <label for="tags" class="form-label">标签</label>
+                    <input type="text" class="form-control" id="tags" name="tags"
+                           value="{{ destination.tags or '' }}"
+                           placeholder="例如: 美食,历史,自然,文化">
+                    <div class="form-text">多个标签用逗号分隔</div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> 保存
+                    </button>
+                    <a href="{{ url_for('destination_detail', id=destination.id) }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> 取消
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-document.getElementById('cover_image').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('image-preview');
-
-    if (file) {
-        if (file.size > 16 * 1024 * 1024) {
-            alert('文件大小不能超过 16MB');
-            this.value = '';
-            preview.innerHTML = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = `
-                <div class="border p-3 rounded">
-                    <p class="mb-2">新图片预览:</p>
-                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 300px;">
-                    <p class="mt-2 text-muted"><small>文件名: ${file.name}</small></p>
-                    <p class="text-muted"><small>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</small></p>
-                </div>
-            `;
-        };
-        reader.readAsDataURL(file);
+// 境外地区数据
+const INTERNATIONAL_DATA = {
+    '亚洲': {
+        '东南亚': ['泰国', '新加坡', '马来西亚', '印度尼西亚', '越南', '菲律宾', '柬埔寨', '老挝', '缅甸'],
+        '东亚': ['日本', '韩国', '朝鲜'],
+        '南亚': ['印度', '尼泊尔', '斯里兰卡', '马尔代夫', '孟加拉国'],
+        '中亚': ['哈萨克斯坦', '乌兹别克斯坦', '吉尔吉斯斯坦'],
+        '西亚': ['土耳其', '阿联酋', '以色列', '沙特阿拉伯', '伊朗', '卡塔尔']
+    },
+    '欧洲': {
+        '西欧': ['法国', '英国', '德国', '荷兰', '比利时', '卢森堡'],
+        '南欧': ['意大利', '西班牙', '葡萄牙', '希腊', '克罗地亚'],
+        '北欧': ['挪威', '瑞典', '丹麦', '芬兰', '冰岛'],
+        '东欧': ['俄罗斯', '波兰', '捷克', '匈牙利', '罗马尼亚'],
+        '中欧': ['奥地利', '瑞士']
+    },
+    '北美洲': {
+        '北美洲': ['美国', '加拿大', '墨西哥'],
+        '中美洲': ['巴拿马', '哥斯达黎加', '古巴']
+    },
+    '南美洲': {
+        '南美洲': ['巴西', '阿根廷', '智利', '秘鲁', '哥伦比亚', '乌拉圭']
+    },
+    '非洲': {
+        '北非': ['埃及', '摩洛哥', '突尼斯'],
+        '东非': ['肯尼亚', '坦桑尼亚', '埃塞俄比亚'],
+        '南非': ['南非', '纳米比亚', '博茨瓦纳']
+    },
+    '大洋洲': {
+        '大洋洲': ['澳大利亚', '新西兰', '斐济']
     }
-});
+};
+
+// 切换境内/境外字段
+function toggleFields() {
+    const isDomestic = document.getElementById('domestic').checked;
+    const isInternational = document.getElementById('international').checked;
+    const isOtherType = document.getElementById('cruise').checked ||
+                       document.getElementById('weekend').checked ||
+                       document.getElementById('theme').checked;
+
+    // 境内游显示省份，其他类型显示省份（作为地区）
+    document.getElementById('province-field').style.display = (isDomestic || isOtherType) ? 'block' : 'none';
+
+    // 境外游显示洲/地区/国家
+    document.getElementById('international-fields').style.display = isInternational ? 'flex' : 'none';
+
+    // 清空境外字段
+    if (!isInternational) {
+        document.getElementById('continent').value = '';
+        document.getElementById('area').value = '';
+        document.getElementById('country').value = '';
+    }
+}
+
+// 更新地区下拉框
+function updateAreas() {
+    const continent = document.getElementById('continent').value;
+    const areaSelect = document.getElementById('area');
+    const countrySelect = document.getElementById('country');
+
+    areaSelect.innerHTML = '<option value="">请选择地区</option>';
+    countrySelect.innerHTML = '<option value="">请先选择地区</option>';
+
+    if (continent && INTERNATIONAL_DATA[continent]) {
+        Object.keys(INTERNATIONAL_DATA[continent]).forEach(area => {
+            const option = document.createElement('option');
+            option.value = area;
+            option.textContent = area;
+            areaSelect.appendChild(option);
+        });
+    }
+}
+
+// 更新国家下拉框
+function updateCountries() {
+    const continent = document.getElementById('continent').value;
+    const area = document.getElementById('area').value;
+    const countrySelect = document.getElementById('country');
+
+    countrySelect.innerHTML = '<option value="">请选择国家</option>';
+
+    if (continent && area && INTERNATIONAL_DATA[continent] && INTERNATIONAL_DATA[continent][area]) {
+        INTERNATIONAL_DATA[continent][area].forEach(country => {
+            const option = document.createElement('option');
+            option.value = country;
+            option.textContent = country;
+            countrySelect.appendChild(option);
+        });
+    }
+}
 </script>
 {% endblock %}

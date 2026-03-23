@@ -840,64 +840,483 @@ footer a:hover {
     letter-spacing: 0.2em;
 }
 
-/* 新增：加载动画 */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* 目的地页面样式 */
+.dest-search-hero {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+    padding: 4rem 0;
+    margin-bottom: 3rem;
+    text-align: center;
 }
 
-.fade-in {
-    animation: fadeIn 0.5s ease forwards;
+.search-box-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
 }
 
-/* 新增：悬浮效果更明显 */
-.card .btn-action {
-    opacity: 0;
-    transform: translateY(10px);
+.search-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.75rem;
+}
+
+.search-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+}
+
+.dest-search-form {
+    margin-bottom: 0;
+}
+
+.search-input-group {
+    border-radius: 50px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.search-icon {
+    background: white;
+    border: none;
+    padding-left: 1.5rem;
+    padding-right: 0;
+}
+
+.search-icon i {
+    color: var(--muted-color);
+    font-size: 1.2rem;
+}
+
+.dest-search-input {
+    border: none;
+    padding: 1.25rem;
+    font-size: 1.1rem;
+}
+
+.dest-search-input:focus {
+    box-shadow: none;
+    border: none;
+}
+
+.btn-search {
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0 2.5rem;
+    border-radius: 0 50px 50px 0;
     transition: all 0.3s ease;
 }
 
-.card:hover .btn-action {
-    opacity: 1;
-    transform: translateY(0);
+.btn-search:hover {
+    background: var(--primary-gradient);
+    transform: scale(1.02);
+}
+
+.dest-container {
+    padding-bottom: 3rem;
+}
+
+/* 国内游/出国游/邮轮/周末/主题乐园选择 */
+.dest-type-selector {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 3rem;
+}
+
+@media (max-width: 1200px) {
+    .dest-type-selector {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
-    .hero-carousel {
-        height: 350px;
-    }
-
-    .hero-content h1 {
-        font-size: 2rem;
-    }
-
-    .hero-content p {
-        font-size: 1.1rem;
-    }
-
-    .card:hover {
-        transform: none;
-    }
-
-    .card .btn-action {
-        opacity: 1;
-    }
-
-    .section-header h2 {
-        font-size: 1.5rem;
+    .dest-type-selector {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
     }
 }
 
-.destination-card,
-.guide-card,
-.itinerary-card {
+.dest-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    text-align: center;
+}
+
+.dest-type-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.dest-type-card.active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.dest-type-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.domestic-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+}
+
+.international-icon {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
+.cruise-icon {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    box-shadow: 0 4px 15px rgba(42, 82, 152, 0.4);
+}
+
+.weekend-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+}
+
+.theme-icon {
+    background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);
+    box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+}
+
+.dest-type-content h3 {
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.dest-type-content p {
+    margin-bottom: 0;
+    color: var(--muted-color);
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+/* 筛选区域 */
+.dest-filter-section {
+    margin-bottom: 3rem;
+}
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    color: var(--text-color);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: white;
+}
+
+.active-filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.filter-close {
+    color: var(--primary-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+.filter-close:hover {
+    opacity: 0.6;
+}
+
+.result-count {
+    margin-left: auto;
+    color: var(--muted-color);
+    font-size: 0.95rem;
+}
+
+.result-count strong {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+/* 目的地区块 */
+.dest-section {
+    margin-bottom: 4rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.section-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-header h2 i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.view-all-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: gap 0.3s ease;
+}
+
+.view-all-link:hover {
+    gap: 0.75rem;
+}
+
+.sort-options {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.25rem;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    color: var(--muted-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.sort-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.sort-btn.active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: white;
+}
+
+/* 目的地网格 - 推荐 */
+.dest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .dest-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* 目的地网格 - 全部 */
+.dest-grid-full {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+    .dest-grid-full {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* 目的地卡片 */
+.dest-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dest-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+.dest-card-link {
+    text-decoration: none;
+    display: block;
+    color: inherit;
+}
+
+.dest-card-image {
+    position: relative;
+    height: 180px;
     overflow: hidden;
 }
 
-.destination-card .card-body,
-.guide-card .card-body,
-.itinerary-card .card-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+.dest-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
 }
+
+.dest-card:hover .dest-card-image img {
+    transform: scale(1.08);
+}
+
+.dest-no-image {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.dest-card-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #00AA6C 0%, #00CC80 100%);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 170, 108, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.dest-card-body {
+    padding: 1.25rem;
+}
+
+.dest-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.dest-card:hover .dest-name {
+    color: var(--primary-color);
+}
+
+.dest-location {
+    font-size: 0.85rem;
+    color: var(--muted-color);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dest-location::before {
+    content: '📍';
+}
+
+.dest-desc {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 无结果 */
+.no-results {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.no-results i {
+    font-size: 4rem;
+    color: var(--muted-color);
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
+}
+
+.no-results p {
+    font-size: 1.1rem;
+    color: var(--muted-color);
+    margin-bottom: 2rem;
+}
+
+

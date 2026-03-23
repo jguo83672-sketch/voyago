@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}行程准备 - {{ itinerary.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('itineraries') }}">行程</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('itinerary_detail', id=itinerary.id) }}">{{ itinerary.title }}</a></li>
+            <li class="breadcrumb-item active">行程准备</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 左侧：准备信息和清单 -->
+        <div class="col-lg-4">
+            <!-- 行程信息卡片 -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-plane-departure"></i> 行程信息</h5>
+                </div>
+                <div class="card-body">
+                    <h5>{{ itinerary.title }}</h5>
+                    <p class="text-muted mb-2"><i class="fas fa-calendar"></i> {{ itinerary.days }}天行程</p>
+                    {% if destination %}
+                    <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ destination.name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 准备表单 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> 准备信息</h5>
+                </div>
+                <div class="card-body">
+                    <form id="prepForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group mb-3">
+                            <label>入住日期 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="check_in" id="check_in"
+                                   value="{{ check_in.strftime('%Y-%m-%d') if check_in else '' }}" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>退房日期 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="check_out" id="check_out"
+                                   value="{{ check_out.strftime('%Y-%m-%d') if check_out else '' }}" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>入住人数</label>
+                            <input type="number" class="form-control" name="guest_count" id="guest_count"
+                                   value="1" min="1" max="10">
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>酒店预算（每晚）</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">¥</span>
+                                </div>
+                                <input type="number" class="form-control" name="budget" id="budget"
+                                       placeholder="不限" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>备注</label>
+                            <textarea class="form-control" name="notes" rows="2"
+                                      placeholder="其他需求...">{{ prep.notes if prep else '' }}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> 保存信息
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 准备清单 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> 准备清单</h5>
+                </div>
+                <div class="card-body">
+                    <div id="checklistContainer">
+                        {% for category, items in checklist.items() %}
+                        <div class="mb-3">
+                            <h6 class="text-primary"><i class="fas fa-folder"></i> {{ category }}</h6>
+                            {% for item in items %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="item_{{ loop.index0 }}"
+                                       {% if item.required %}required{% endif %}>
+                                <label class="form-check-label" for="item_{{ loop.index0 }}">
+                                    {{ item.name }}
+                                    {% if item.required %}
+                                    <span class="badge badge-danger">必带</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：推荐信息 -->
+        <div class="col-lg-8">
+            <!-- 酒店推荐 -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-hotel"></i> 酒店推荐</h5>
+                </div>
+                <div class="card-body">
+                    <div id="hotelResults">
+                        <div class="text-center py-5">
+                            <p class="text-muted">请先填写准备信息并保存</p>
+                            <button class="btn btn-outline-success" onclick="loadHotels()">
+                                <i class="fas fa-search"></i> 查看酒店推荐
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 机票推荐 -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-plane"></i> 机票推荐</h5>
+                </div>
+                <div class="card-body">
+                    <div id="flightResults">
+                        <div class="text-center py-5">
+                            <p class="text-muted">请先填写准备信息并保存</p>
+                            <button class="btn btn-outline-info" onclick="loadFlights()">
+                                <i class="fas fa-search"></i> 查看机票推荐
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const itineraryId = {{ itinerary.id }};
+
+// 保存准备信息
+document.getElementById('prepForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch(`{{ url_for('save_itinerary_prep', itinerary_id=itinerary.id) }}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('准备信息保存成功！', 'success');
+            // 自动加载推荐
+            loadHotels();
+            loadFlights();
+        } else {
+            showToast(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('保存失败，请重试', 'danger');
+    });
+});
+
+// 加载酒店推荐
+function loadHotels() {
+    const container = document.getElementById('hotelResults');
+    container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+    fetch(`{{ url_for('get_hotel_recommendations', itinerary_id=itinerary.id) }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.hotels.length > 0) {
+                container.innerHTML = data.hotels.map(hotel => `
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <img src="${hotel.image_url || 'https://via.placeholder.com/400x300?text=Hotel'}"
+                                         class="img-fluid rounded" alt="${hotel.name}">
+                                </div>
+                                <div class="col-md-9">
+                                    <h5>${hotel.name}</h5>
+                                    <div class="mb-2">
+                                        <span class="text-warning">
+                                            <i class="fas fa-star"></i> ${hotel.rating}
+                                        </span>
+                                        <span class="text-muted ml-2">¥${hotel.price_per_night}/晚</span>
+                                        <span class="text-success ml-2">总价 ¥${hotel.total_price}</span>
+                                    </div>
+                                    <p class="text-muted mb-2"><i class="fas fa-map-marker-alt"></i> ${hotel.location}</p>
+                                    <div class="mb-2">
+                                        ${hotel.amenities.map(a => `<span class="badge badge-info mr-1">${a}</span>`).join('')}
+                                    </div>
+                                    <a href="${hotel.booking_url}" target="_blank" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-external-link-alt"></i> 预订
+                                    </a>
+                                    <span class="badge badge-secondary ml-2">${hotel.source}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="text-center py-5"><p class="text-muted">暂无酒店推荐</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<div class="text-center py-5"><p class="text-danger">加载失败，请重试</p></div>';
+        });
+}
+
+// 加载机票推荐
+function loadFlights() {
+    const container = document.getElementById('flightResults');
+    container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+    fetch(`{{ url_for('get_flight_recommendations', itinerary_id=itinerary.id) }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.flights.length > 0) {
+                container.innerHTML = data.flights.map(flight => `
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3 text-center">
+                                            <h5 class="mb-0">${flight.departure_time}</h5>
+                                            <p class="text-muted mb-0">${flight.departure_city}</p>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <p class="mb-0"><i class="fas fa-plane"></i></p>
+                                            <p class="text-muted mb-0">${flight.duration}</p>
+                                            ${flight.stops === 0 ? '<span class="badge badge-success">直飞</span>' : `<span class="badge badge-warning">${flight.stops}次中转</span>`}
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <h5 class="mb-0">${flight.arrival_time}</h5>
+                                            <p class="text-muted mb-0">${flight.arrival_city}</p>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="mb-1">${flight.airline}</h6>
+                                            <p class="text-muted mb-0">${flight.flight_number}</p>
+                                            <span class="badge badge-info">${flight.class_type}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <h4 class="text-primary mb-2">¥${flight.price}</h4>
+                                    <a href="${flight.booking_url}" target="_blank" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt"></i> 预订
+                                    </a>
+                                    <span class="badge badge-secondary">${flight.source}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="text-center py-5"><p class="text-muted">暂无机票推荐</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<div class="text-center py-5"><p class="text-danger">加载失败，请重试</p></div>';
+        });
+}
+
+// 显示提示消息
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+{% endblock %}

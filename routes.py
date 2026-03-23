@@ -13,6 +13,8 @@ import uuid
 from utils import save_upload_file, delete_file
 from ai_planner import create_planner
 from travel_prep import create_prep_service
+from ocr_service import recognize_guide_image
+from guide_classifier import classify_guide, suggest_destination, suggest_guide_title
 
 @app.route('/')
 def index():
@@ -26,11 +28,63 @@ def index():
 
 @app.route('/destinations')
 def destinations():
-    page = request.args.get('page', 1, type=int)
-    destinations = Destination.query.paginate(
-        page=page, per_page=12, error_out=False
-    )
-    return render_template('destinations.html', destinations=destinations)
+    search = request.args.get('search', '')
+    region_type = request.args.get('region_type', 'all')  # all, domestic, international, cruise, weekend, theme
+    province = request.args.get('province')  # 境内省份筛选
+    continent = request.args.get('continent')  # 大洲筛选
+    area = request.args.get('area')  # 地区筛选
+    country = request.args.get('country')  # 国家筛选
+    sort_by = request.args.get('sort_by', 'rating')  # rating, name
+
+    query = Destination.query
+
+    # 搜索
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(
+            (Destination.name.like(search_pattern)) |
+            (Destination.description.like(search_pattern)) |
+            (Destination.province.like(search_pattern)) |
+            (Destination.country.like(search_pattern))
+        )
+
+    # 按境内/境外/邮轮/周末/主题乐园筛选
+    if region_type != 'all':
+        query = query.filter_by(region_type=region_type)
+
+    # 按境内省份筛选（适用于国内游、邮轮、周末近郊、主题乐园）
+    if province:
+        query = query.filter_by(province=province)
+
+    # 按境外地区筛选
+    if continent:
+        query = query.filter_by(continent=continent)
+    if area:
+        query = query.filter_by(area=area)
+    if country:
+        query = query.filter_by(country=country)
+
+    # 排序
+    if sort_by == 'name':
+        destinations = query.order_by(Destination.name).paginate(
+            page=1, per_page=100, error_out=False
+        )
+    else:
+        destinations = query.order_by(Destination.rating.desc()).paginate(
+            page=1, per_page=100, error_out=False
+        )
+
+    # 获取筛选条件
+    filters = {
+        'region_type': region_type,
+        'province': province,
+        'continent': continent,
+        'area': area,
+        'country': country,
+        'sort_by': sort_by
+    }
+
+    return render_template('destinations.html', destinations=destinations, filters=filters)
 
 @app.route('/destination/<int:id>')
 def destination_detail(id):
@@ -207,22 +261,35 @@ def create_destination():
             file = request.files['cover_image']
             if file.filename:
                 cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'destinations')
-        
+
+        region_type = request.form.get('region_type', 'domestic')
+
         destination = Destination(
             name=request.form.get('name'),
-            country=request.form.get('country'),
-            city=request.form.get('city'),
+            region_type=region_type,
             description=request.form.get('description'),
             cover_image=cover_image,
             rating=float(request.form.get('rating', 0)),
             tags=request.form.get('tags')
         )
+
+        # 根据类型设置字段
+        if region_type == 'domestic':
+            destination.province = request.form.get('province')
+            destination.country = '中国'
+            destination.continent = '亚洲'
+            destination.area = '东亚'
+        else:
+            destination.continent = request.form.get('continent')
+            destination.area = request.form.get('area')
+            destination.country = request.form.get('country')
+
         db.session.add(destination)
         db.session.commit()
-        
+
         flash('目的地添加成功', 'success')
         return redirect(url_for('destination_detail', id=destination.id))
-    
+
     return render_template('create_destination.html')
 
 @app.route('/create-guide', methods=['GET', 'POST'])
@@ -234,7 +301,7 @@ def create_guide():
             file = request.files['cover_image']
             if file.filename:
                 cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'guides')
-        
+
         guide = Guide(
             title=request.form.get('title'),
             content=request.form.get('content'),
@@ -245,12 +312,141 @@ def create_guide():
         )
         db.session.add(guide)
         db.session.commit()
-        
+
         flash('攻略发布成功', 'success')
         return redirect(url_for('guide_detail', id=guide.id))
-    
+
+    # GET 请求：检查是否从 OCR 导入过来
+    ocr_import = None
+    if request.args.get('title') or request.args.get('content'):
+        ocr_import = {
+            'title': request.args.get('title', ''),
+            'content': request.args.get('content', ''),
+            'category': request.args.get('category', ''),
+            'destination_id': request.args.get('destination_id')
+        }
+
     destinations = Destination.query.all()
-    return render_template('create_guide.html', destinations=destinations)
+    return render_template('create_guide.html', destinations=destinations, ocr_import=ocr_import)
+
+
+@app.route('/guide/import-ocr', methods=['GET', 'POST'])
+@login_required
+def import_guide_ocr():
+    """通过 OCR 导入攻略"""
+    if request.method == 'POST':
+        try:
+            # 检查是否有上传的图片
+            if 'guide_image' not in request.files:
+                flash('请上传攻略图片', 'error')
+                return redirect(request.url)
+
+            file = request.files['guide_image']
+            if not file.filename:
+                flash('请选择要上传的图片', 'error')
+                return redirect(request.url)
+
+            # 读取图片数据
+            image_data = file.read()
+
+            # 使用 OCR 识别文字
+            flash('正在识别文字，请稍候...', 'info')
+            recognized_text = recognize_guide_image(image_data)
+
+            # 使用 AI 分类
+            flash('正在自动分类...', 'info')
+            category_result = classify_guide("", recognized_text)
+
+            # 生成建议标题
+            suggested_title = suggest_guide_title(recognized_text)
+
+            # 保存识别的图片作为封面
+            import tempfile
+            import os
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                tmp.write(image_data)
+                tmp_path = tmp.name
+
+            try:
+                from werkzeug.datastructures import FileStorage
+                file_storage = FileStorage(
+                    stream=open(tmp_path, 'rb'),
+                    filename=f"ocr_import_{uuid.uuid4().hex[:8]}.jpg"
+                )
+                cover_image = save_upload_file(file_storage, app.config['UPLOAD_FOLDER'], 'guides')
+            finally:
+                os.unlink(tmp_path)
+
+            # 传递数据到创建攻略页面
+            destinations = Destination.query.all()
+
+            return render_template('create_guide.html',
+                                  destinations=destinations,
+                                  ocr_import={
+                                      'title': suggested_title,
+                                      'content': recognized_text,
+                                      'category': category_result['category'],
+                                      'cover_image': cover_image
+                                  })
+
+        except Exception as e:
+            flash(f'OCR 识别失败: {str(e)}', 'error')
+            return redirect(url_for('create_guide'))
+
+    return render_template('import_guide_ocr.html')
+
+
+@app.route('/guide/ocr-analyze', methods=['POST'])
+@login_required
+def ocr_analyze():
+    """OCR 分析接口（用于 AJAX 请求）"""
+    try:
+        # 检查是否有上传的图片
+        if 'guide_image' not in request.files:
+            return jsonify({'success': False, 'error': '请上传攻略图片'}), 400
+
+        file = request.files['guide_image']
+        if not file.filename:
+            return jsonify({'success': False, 'error': '请选择要上传的图片'}), 400
+
+        # 读取图片数据
+        image_data = file.read()
+
+        # 使用 OCR 识别文字
+        recognized_text = recognize_guide_image(image_data)
+
+        # 使用 AI 分类
+        category_result = classify_guide("", recognized_text)
+
+        # 生成建议标题
+        suggested_title = suggest_guide_title(recognized_text)
+
+        # 尝试提取目的地
+        suggested_destination = suggest_destination(suggested_title, recognized_text)
+
+        # 查找匹配的目的地
+        destination_id = None
+        if suggested_destination:
+            destination = Destination.query.filter(
+                Destination.name.like(f'%{suggested_destination}%')
+            ).first()
+            if destination:
+                destination_id = destination.id
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'title': suggested_title,
+                'content': recognized_text,
+                'category': category_result['category'],
+                'destination_name': suggested_destination,
+                'destination_id': destination_id
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/create-itinerary', methods=['GET', 'POST'])
 @login_required
@@ -418,11 +614,22 @@ def edit_destination(id):
                     delete_file(old_image)
 
         destination.name = request.form.get('name')
-        destination.country = request.form.get('country')
-        destination.city = request.form.get('city')
+        destination.region_type = request.form.get('region_type', destination.region_type)
         destination.description = request.form.get('description')
         destination.rating = float(request.form.get('rating', 0))
         destination.tags = request.form.get('tags')
+
+        # 根据类型更新字段
+        if destination.region_type == 'domestic':
+            destination.province = request.form.get('province')
+            destination.country = '中国'
+            destination.continent = '亚洲'
+            destination.area = '东亚'
+        else:
+            destination.province = None
+            destination.continent = request.form.get('continent')
+            destination.area = request.form.get('area')
+            destination.country = request.form.get('country')
 
         db.session.commit()
         flash('目的地更新成功', 'success')
