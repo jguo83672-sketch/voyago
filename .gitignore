@@ -6,6 +6,7 @@ __pycache__/
 env/
 venv/
 ENV/
+.venv/  # 忽略陈泽禹的虚拟环境
 build/
 develop-eggs/
 dist/
