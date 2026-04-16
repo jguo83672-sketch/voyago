@@ -75,15 +75,80 @@
             </div>
         </div>
 
+        <!-- 每日行程编辑 -->
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-week"></i> 每日行程安排</h5>
+            </div>
+            <div class="card-body">
+                {% set days = itinerary.days_schedule|sort(attribute='day_number') %}
+                {% for day in days %}
+                <div class="card mb-3 day-edit-card" data-day="{{ day.day_number }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-day"></i> 第 {{ day.day_number }} 天
+                            {% if day.destination %}
+                            <span class="badge bg-success ms-2">{{ day.destination.name }}</span>
+                            {% endif %}
+                        </h6>
+                        <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> 详细编辑
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">当天目的地</label>
+                                <select class="form-select day-destination-select" name="day_{{ day.day_number }}_destination" data-day-id="{{ day.id }}">
+                                    <option value="">-- 选择目的地 --</option>
+                                    {% for dest in itinerary.destinations %}
+                                    <option value="{{ dest.id }}" {% if day.destination_id == dest.id %}selected{% endif %}>
+                                        {{ dest.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">当天标题</label>
+                                <input type="text" class="form-control day-title-input" name="day_{{ day.day_number }}_title"
+                                       value="{{ day.title or '' }}" data-day-id="{{ day.id }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">行程描述</label>
+                            <textarea class="form-control day-desc-input" name="day_{{ day.day_number }}_description" rows="2"
+                                      data-day-id="{{ day.id }}">{{ day.description or '' }}</textarea>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">活动安排 (每行一个活动)</label>
+                            <textarea class="form-control day-activities-input" name="day_{{ day.day_number }}_activities" rows="3"
+                                      data-day-id="{{ day.id }}">{{ day.activities or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="button" class="btn btn-secondary" onclick="saveAllDays()">
+                        <i class="bi bi-save"></i> 保存每日更改
+                    </button>
+                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> 查看行程
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="card mt-3">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-info-circle"></i> 编辑提示</h5>
             </div>
             <div class="card-body">
                 <ul class="mb-0">
-                    <li>目前只能编辑基本信息，每日行程安排的修改功能正在开发中</li>
+                    <li>点击"详细编辑"可为每天添加地图位置、详细活动时间表</li>
                     <li>如需修改行程天数，请删除后重新创建行程</li>
-                    <li>目的地的修改需要重新创建行程</li>
+                    <li>可以在每日行程中绑定不同的目的地，实现多目的地行程规划</li>
                     <li>图片会被自动压缩优化</li>
                 </ul>
             </div>
@@ -120,5 +185,70 @@ document.getElementById('cover_image').addEventListener('change', function(e) {
         reader.readAsDataURL(file);
     }
 });
+
+// 目的地选择变化时更新徽章
+{% for day in itinerary.days_schedule|sort(attribute='day_number') %}
+document.querySelector('select[name="day_{{ day.day_number }}_destination"]').addEventListener('change', function() {
+    const card = this.closest('.day-edit-card');
+    const badge = card.querySelector('.card-header .badge');
+    const selectedText = this.options[this.selectedIndex].text;
+
+    if (this.value) {
+        if (badge) {
+            badge.textContent = selectedText;
+        } else {
+            const title = card.querySelector('.card-header h6');
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge bg-success ms-2';
+            newBadge.textContent = selectedText;
+            title.appendChild(newBadge);
+        }
+    } else if (badge) {
+        badge.remove();
+    }
+});
+{% endfor %}
+
+// 保存所有每日行程
+async function saveAllDays() {
+    const dayCards = document.querySelectorAll('.day-edit-card');
+    const updates = [];
+
+    dayCards.forEach(card => {
+        const dayId = card.querySelector('.day-destination-select').dataset.dayId;
+        const destinationId = card.querySelector('.day-destination-select').value;
+        const title = card.querySelector('.day-title-input').value;
+        const description = card.querySelector('.day-desc-input').value;
+        const activities = card.querySelector('.day-activities-input').value;
+
+        updates.push({
+            day_id: parseInt(dayId),
+            destination_id: destinationId ? parseInt(destinationId) : null,
+            title: title,
+            description: description,
+            activities: activities
+        });
+    });
+
+    try {
+        const response = await fetch('{{ url_for("update_itinerary_days", id=itinerary.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ days: updates })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert('每日行程保存成功！');
+            location.reload();
+        } else {
+            alert('保存失败：' + data.message);
+        }
+    } catch (e) {
+        alert('保存失败：' + e.message);
+    }
+}
 </script>
 {% endblock %}

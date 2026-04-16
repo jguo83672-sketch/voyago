@@ -493,8 +493,8 @@ const countryCoordinates = {
 // 初始化地图（使用国内可访问的高德地图）
 const map = L.map('footprint-map').setView([35, 105], 4);
 
-// 使用高德地图瓦片服务（国内可访问）
-L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+// 使用高德地图瓦片服务（使用 API key）
+L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}&key=8c5652200d248bdd1f8ba1d0cd966392', {
     subdomains: ['1', '2', '3', '4'],
     minZoom: 3,
     maxZoom: 18,

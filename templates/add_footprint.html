@@ -30,6 +30,33 @@
                             <input type="date" class="form-control" id="visit_date" name="visit_date" required>
                         </div>
 
+                        <!-- 地理坐标 -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">具体位置 <span class="text-muted">（点击地图或输入地址选择，可选）</span></label>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <input type="hidden" id="latitude" name="latitude">
+                                    <input type="hidden" id="longitude" name="longitude">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="address-search" placeholder="输入地址搜索">
+                                        <button type="button" class="btn btn-outline-primary" onclick="searchAddress()">
+                                            <i class="bi bi-search"></i> 搜索
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-control bg-light">
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt"></i>
+                                            纬度: <span id="display-lat">-</span> | 经度: <span id="display-lng">-</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="location-address" class="form-text">点击地图选择具体位置，或输入地址搜索</div>
+                            <div id="footprint-map" style="height: 350px; width: 100%; border-radius: 8px; overflow: hidden; margin-top: 10px;"></div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="rating" class="form-label">评分</label>
                             <div class="d-flex align-items-center">
@@ -61,7 +88,89 @@
     </div>
 </div>
 
+<!-- Leaflet 地图库 -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- 地图助手 -->
+<script src="{{ url_for('static', filename='js/map-helper.js') }}"></script>
+
 <script>
+let footprintMap = null;
+let selectedLocation = null;
+
+// 初始化地图
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+
+function initMap() {
+    // 创建选点地图
+    footprintMap = createPickerMap('footprint-map', function(location) {
+        selectedLocation = location;
+
+        // 更新表单字段
+        document.getElementById('latitude').value = location.lat;
+        document.getElementById('longitude').value = location.lng;
+
+        // 更新显示
+        document.getElementById('display-lat').textContent = location.lat.toFixed(6);
+        document.getElementById('display-lng').textContent = location.lng.toFixed(6);
+        document.getElementById('location-address').textContent = location.address;
+        document.getElementById('location-address').classList.add('text-primary');
+    });
+}
+
+// 搜索地址
+function searchAddress() {
+    const address = document.getElementById('address-search').value;
+    if (!address.trim()) {
+        alert('请输入要搜索的地址');
+        return;
+    }
+
+    geocodeAddress(address).then(result => {
+        if (result) {
+            footprintMap.setView([result.lat, result.lng], 13);
+
+            // 触发地图点击事件以更新标记
+            const event = { latlng: { lat: result.lat, lng: result.lng } };
+            footprintMap.fire('click', event);
+        } else {
+            alert('未找到该地址，请尝试更详细的信息');
+        }
+    }).catch(error => {
+        console.error('搜索失败:', error);
+        alert('搜索失败，请检查网络连接');
+    });
+}
+
+// 当选择目的地时，自动定位到该目的地
+document.getElementById('destination_id').addEventListener('change', function() {
+    const select = this;
+    const selectedOption = select.options[select.selectedIndex];
+
+    // 尝试从选项文本中提取城市或省份信息
+    const text = selectedOption.text;
+
+    // 先尝试匹配城市
+    for (const city of Object.keys(CITY_COORDINATES)) {
+        if (text.includes(city)) {
+            const coords = CITY_COORDINATES[city];
+            footprintMap.setView(coords, 10);
+            return;
+        }
+    }
+
+    // 再尝试匹配省份
+    for (const province of Object.keys(PROVINCE_COORDINATES)) {
+        if (text.includes(province)) {
+            const coords = PROVINCE_COORDINATES[province];
+            footprintMap.setView(coords, 8);
+            return;
+        }
+    }
+});
+
 // 评分滑块实时显示
 document.getElementById('rating').addEventListener('input', function() {
     const value = this.value;

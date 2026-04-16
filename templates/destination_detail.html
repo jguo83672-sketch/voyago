@@ -42,6 +42,18 @@
         <h3 class="mb-3">简介</h3>
         <p class="lead">{{ destination.description }}</p>
 
+        {% if destination.latitude and destination.longitude %}
+        <!-- 地图展示 -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-map"></i> 位置地图
+            </div>
+            <div class="card-body">
+                <div id="destination-map" style="height: 400px;"></div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if destination.tags %}
         <div class="mb-4">
             <h5 class="mb-3">标签</h5>
@@ -176,7 +188,35 @@
 {% endblock %}
 
 {% block scripts %}
+{% if destination.latitude and destination.longitude %}
+<!-- Leaflet 地图库 -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- 地图助手 -->
+<script src="{{ url_for('static', filename='js/map-helper.js') }}"></script>
+{% endif %}
+
 <script>
+// 初始化地图
+document.addEventListener('DOMContentLoaded', function() {
+    {% if destination.latitude and destination.longitude %}
+    try {
+        createDisplayMap('destination-map', [{
+            lat: {{ destination.latitude }},
+            lng: {{ destination.longitude }},
+            title: {{ destination.name | tojson | safe }},
+            description: {{ destination.display_location | tojson | safe }}
+        }], {
+            defaultLat: {{ destination.latitude }},
+            defaultLng: {{ destination.longitude }},
+            defaultZoom: 13
+        });
+    } catch (error) {
+        console.error('地图初始化失败:', error);
+    }
+    {% endif %}
+});
+
 async function toggleLike(type, id) {
     try {
         const response = await fetch(`/like/${type}/${id}`);

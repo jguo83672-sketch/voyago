@@ -53,7 +53,8 @@ class User(UserMixin, db.Model):
 
 itinerary_destinations = db.Table('itinerary_destinations',
     db.Column('itinerary_id', db.Integer, db.ForeignKey('itineraries.id'), primary_key=True),
-    db.Column('destination_id', db.Integer, db.ForeignKey('destinations.id'), primary_key=True)
+    db.Column('destination_id', db.Integer, db.ForeignKey('destinations.id'), primary_key=True),
+    db.Column('visit_order', db.Integer, default=0)  # 访问顺序
 )
 
 class Destination(db.Model):
@@ -73,6 +74,10 @@ class Destination(db.Model):
     area = db.Column(db.String(50))  # 地区(境外),如东南亚、西欧等
     country = db.Column(db.String(100))  # 国家
     city = db.Column(db.String(100))
+
+    # 地理坐标
+    latitude = db.Column(db.Float)  # 纬度
+    longitude = db.Column(db.Float)  # 经度
 
     description = db.Column(db.Text)
     cover_image = db.Column(db.String(200))
@@ -150,15 +155,28 @@ class Itinerary(db.Model):
 
 class ItineraryDay(db.Model):
     __tablename__ = 'itinerary_days'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     day_number = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(200))
     description = db.Column(db.Text)
     activities = db.Column(db.Text)
-    
+
+    # 地理坐标
+    latitude = db.Column(db.Float)  # 纬度
+    longitude = db.Column(db.Float)  # 经度
+
+    # 新增：关联到具体目的地（支持多目的地行程）
+    destination_id = db.Column(db.Integer, db.ForeignKey('destinations.id'), nullable=True)
+
+    # 新增：自由输入的目的地名称（不需要关联到现有目的地）
+    custom_destination = db.Column(db.String(100))
+
     itinerary_id = db.Column(db.Integer, db.ForeignKey('itineraries.id'), nullable=False)
-    
+
+    # 关联关系
+    destination = db.relationship('Destination', backref='itinerary_days', lazy=True)
+
     @property
     def activities_list(self):
         import json
@@ -169,7 +187,18 @@ class ItineraryDay(db.Model):
         except json.JSONDecodeError:
             # 如果解析失败，返回空列表
             return []
-    
+
+    @property
+    def display_location(self):
+        """显示当天所在位置"""
+        if self.custom_destination:
+            return self.custom_destination
+        elif self.destination:
+            return self.destination.name
+        elif self.latitude and self.longitude:
+            return f"({self.latitude:.2f}, {self.longitude:.2f})"
+        return "未设置位置"
+
     def __repr__(self):
         return f'<ItineraryDay Day {self.day_number}>'
 
@@ -366,6 +395,11 @@ class TravelFootprint(db.Model):
     note = db.Column(db.Text)
     photos = db.Column(db.String(500))
     rating = db.Column(db.Float)
+
+    # 地理坐标
+    latitude = db.Column(db.Float)  # 纬度
+    longitude = db.Column(db.Float)  # 经度
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

@@ -18,31 +18,73 @@
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                     </div>
-                    
+
+                    <!-- 目的地选择区域 -->
                     <div class="mb-3">
-                        <label class="form-label">目的地 <small class="text-muted">（可多选）</small></label>
+                        <label class="form-label">
+                            目的地
+                            <small class="text-muted">（可多选）</small>
+                        </label>
+
+                        <!-- 搜索框 -->
+                        <div class="mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="destination-search" placeholder="搜索目的地...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                    <i class="bi bi-x-circle"></i> 清除
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 目的地列表 -->
                         <div class="border p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                            <div id="search-info" class="small text-muted mb-2" style="display: none;"></div>
                             {% for destination in destinations %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       id="dest_{{ destination.id }}" 
-                                       name="destination_ids" 
+                            <div class="form-check destination-item"
+                                 data-name="{{ destination.name.lower() }}"
+                                 data-country="{{ destination.country.lower() }}"
+                                 data-id="{{ destination.id }}"
+                                 data-lat="{{ destination.latitude }}"
+                                 data-lng="{{ destination.longitude }}">
+                                <input class="form-check-input" type="checkbox"
+                                       id="dest_{{ destination.id }}"
+                                       name="destination_ids"
                                        value="{{ destination.id }}">
                                 <label class="form-check-label" for="dest_{{ destination.id }}">
                                     {{ destination.name }} - {{ destination.country }}
                                 </label>
                             </div>
                             {% endfor %}
+                            <div id="no-results" class="text-center text-muted py-3" style="display: none;">
+                                <i class="bi bi-search"></i> 未找到匹配的目的地
+                            </div>
                         </div>
                         <div class="form-text">选择一个或多个目的地，支持跨地区旅行规划</div>
                     </div>
+
+                    <!-- 已选目的地排序区 -->
+                    <div class="mb-3" id="selected-destinations-container" style="display: none;">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>已选目的地顺序 <small class="text-muted">（<span id="selected-count">0</span>个）</small></span>
+                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="optimize-route">
+                                <i class="bi bi-lightning"></i> AI优化路线
+                            </button>
+                        </label>
+                        <div id="selected-destinations" class="border p-3 rounded bg-light" style="min-height: 60px;">
+                            <div id="empty-selection" class="text-center text-muted py-3">
+                                <i class="bi bi-geo-alt"></i> 还没有选择任何目的地
+                            </div>
+                        </div>
+                        <small class="text-muted">拖动列表项调整顺序，或点击"AI优化路线"根据地理位置自动排序</small>
+                    </div>
+
                     <div class="mb-3">
                         <label for="description" class="form-label">行程描述</label>
                         <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="cover_image" class="form-label">封面图片</label>
-                        <input type="file" class="form-control" id="cover_image" name="cover_image" 
+                        <input type="file" class="form-control" id="cover_image" name="cover_image"
                             accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
                         <div class="form-text">支持 PNG、JPG、JPEG、GIF、WEBP 格式，最大 16MB</div>
                         <div id="image-preview" class="mt-2"></div>
@@ -65,12 +107,12 @@
                             <input type="number" class="form-control" id="budget" name="budget" min="0">
                         </div>
                     </div>
-                    
+
                     <hr>
                     <h5 class="mb-3">每日行程安排</h5>
                     <div id="days-container">
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{{ url_for('itineraries') }}" class="btn btn-secondary">取消</a>
                         <button type="submit" class="btn btn-primary">创建行程</button>
@@ -82,23 +124,342 @@
 </div>
 {% endblock %}
 
+<!-- SortableJS 用于拖拽排序 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
 {% block scripts %}
 <script>
+// 已选目的地数组
+let selectedDestinations = [];
+
+// 目的地搜索功能
+const destinationSearch = document.getElementById('destination-search');
+const searchInfo = document.getElementById('search-info');
+const noResults = document.getElementById('no-results');
+const clearSearchBtn = document.getElementById('clear-search');
+const allItems = document.querySelectorAll('.destination-item');
+
+function filterDestinations() {
+    const searchTerm = destinationSearch.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    allItems.forEach(item => {
+        const name = item.dataset.name;
+        const country = item.dataset.country;
+
+        if (name.includes(searchTerm) || country.includes(searchTerm)) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // 更新搜索结果提示
+    if (searchTerm) {
+        searchInfo.textContent = `显示 ${visibleCount} 个目的地`;
+        searchInfo.style.display = 'block';
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    } else {
+        searchInfo.style.display = 'none';
+        noResults.style.display = 'none';
+    }
+}
+
+destinationSearch.addEventListener('input', filterDestinations);
+
+// 清除搜索
+clearSearchBtn.addEventListener('click', function() {
+    destinationSearch.value = '';
+    filterDestinations();
+    destinationSearch.focus();
+});
+
+// 回车键清除搜索
+destinationSearch.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        this.value = '';
+        filterDestinations();
+    }
+});
+
+// 监听目的地复选框变化
+document.querySelectorAll('.destination-item input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const destItem = this.closest('.destination-item');
+        const destId = parseInt(this.value);
+        const destName = destItem.querySelector('label').textContent;
+        const destLat = parseFloat(destItem.dataset.lat);
+        const destLng = parseFloat(destItem.dataset.lng);
+
+        if (this.checked) {
+            // 检查是否已存在
+            if (!selectedDestinations.find(d => d.id === destId)) {
+                // 添加到已选列表
+                selectedDestinations.push({
+                    id: destId,
+                    name: destName,
+                    lat: destLat,
+                    lng: destLng
+                });
+            }
+
+            // 显示已选目的地区域
+            document.getElementById('selected-destinations-container').style.display = 'block';
+        } else {
+            // 从已选列表移除
+            selectedDestinations = selectedDestinations.filter(d => d.id !== destId);
+        }
+
+        updateSelectedDestinationsUI();
+    });
+});
+
+// 更新已选目的地UI
+function updateSelectedDestinationsUI() {
+    const container = document.getElementById('selected-destinations');
+    const emptyMsg = document.getElementById('empty-selection');
+    const countEl = document.getElementById('selected-count');
+
+    // 更新数量显示
+    countEl.textContent = selectedDestinations.length;
+
+    if (selectedDestinations.length === 0) {
+        emptyMsg.style.display = 'block';
+
+        // 清除除empty-msg外的所有内容
+        Array.from(container.children).forEach(child => {
+            if (child.id !== 'empty-selection') {
+                container.removeChild(child);
+            }
+        });
+
+        // 隐藏已选目的地区域
+        document.getElementById('selected-destinations-container').style.display = 'none';
+        return;
+    }
+
+    emptyMsg.style.display = 'none';
+
+    // 清除除empty-msg外的所有内容
+    Array.from(container.children).forEach(child => {
+        if (child.id !== 'empty-selection') {
+            container.removeChild(child);
+        }
+    });
+
+    // 重新渲染已选目的地列表
+    selectedDestinations.forEach((dest, index) => {
+        const item = document.createElement('div');
+        item.className = 'selected-dest-item d-flex align-items-center justify-content-between p-2 mb-2 bg-white rounded border';
+        item.dataset.id = dest.id;
+        item.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-grip-vertical text-muted me-2" style="cursor: grab;"></i>
+                <span class="fw-bold">${dest.name}</span>
+                <small class="text-muted ms-2">${index + 1}</small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-dest-btn" data-id="${dest.id}">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+
+        container.appendChild(item);
+    });
+}
+
+// 移除已选目的地（通过事件委托处理）
+document.getElementById('selected-destinations').addEventListener('click', function(e) {
+    if (e.target.closest('.remove-dest-btn')) {
+        const btn = e.target.closest('.remove-dest-btn');
+        const destId = parseInt(btn.dataset.id);
+        removeSelectedDestination(destId);
+    }
+});
+
+function removeSelectedDestination(destId) {
+    selectedDestinations = selectedDestinations.filter(d => d.id !== destId);
+
+    // 取消选中对应的复选框
+    const checkbox = document.querySelector(`input[value="${destId}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+
+    updateSelectedDestinationsUI();
+}
+
+// AI优化路线
+document.getElementById('optimize-route').addEventListener('click', function() {
+    if (selectedDestinations.length < 2) {
+        alert('请至少选择2个目的地才能使用AI优化功能');
+        return;
+    }
+
+    if (!selectedDestinations.every(d => d.lat && d.lng)) {
+        alert('部分目的地缺少经纬度信息，无法进行路线优化');
+        return;
+    }
+
+    try {
+        // 使用最近邻算法优化路线
+        const optimized = optimizeRouteByDistance(selectedDestinations);
+
+        // 更新已选目的地顺序
+        selectedDestinations = optimized;
+        updateSelectedDestinationsUI();
+
+        // 重新排序复选框的选中顺序
+        updateCheckboxOrder();
+
+        alert('路线优化完成！已根据地理位置调整了目的地顺序');
+    } catch (error) {
+        console.error('路线优化失败:', error);
+        alert('路线优化失败，请稍后重试');
+    }
+});
+
+// 最近邻算法优化路线
+function optimizeRouteByDistance(destinations) {
+    if (destinations.length <= 1) {
+        return destinations;
+    }
+
+    // 从第一个目的地开始
+    const optimized = [destinations[0]];
+    const unvisited = destinations.slice(1);
+
+    while (unvisited.length > 0) {
+        const current = optimized[optimized.length - 1];
+        let nearest = null;
+        let nearestDist = Infinity;
+        let nearestIdx = -1;
+
+        // 找到距离当前位置最近的目的地
+        for (let i = 0; i < unvisited.length; i++) {
+            const dist = calculateDistance(
+                current.lat, current.lng,
+                unvisited[i].lat, unvisited[i].lng
+            );
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = unvisited[i];
+                nearestIdx = i;
+            }
+        }
+
+        // 移动到最近的目的地
+        if (nearest) {
+            optimized.push(nearest);
+            unvisited.splice(nearestIdx, 1);
+        }
+    }
+
+    return optimized;
+}
+
+// 计算两点之间的距离(Haversine公式)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // 地球半径(公里)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+// 更新复选框顺序(让复选框按照已选目的地的顺序排列)
+function updateCheckboxOrder() {
+    const container = document.querySelector('.destination-item').parentElement;
+
+    selectedDestinations.forEach(dest => {
+        const item = document.querySelector(`.destination-item[data-id="${dest.id}"]`);
+        if (item) {
+            container.appendChild(item);
+        }
+    });
+}
+
+// 初始化拖拽排序
+document.addEventListener('DOMContentLoaded', function() {
+    const listEl = document.getElementById('selected-destinations');
+
+    if (typeof Sortable !== 'undefined') {
+        new Sortable(listEl, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            handle: '.bi-grip-vertical',
+            onEnd: function(evt) {
+                // 更新selectedDestinations数组的顺序
+                const items = listEl.querySelectorAll('.selected-dest-item');
+                const newOrder = [];
+                items.forEach(item => {
+                    const id = parseInt(item.dataset.id);
+                    const dest = selectedDestinations.find(d => d.id === id);
+                    if (dest) {
+                        newOrder.push(dest);
+                    }
+                });
+                selectedDestinations = newOrder;
+
+                // 更新序号显示
+                items.forEach((item, index) => {
+                    const numEl = item.querySelector('small');
+                    if (numEl) {
+                        numEl.textContent = index + 1;
+                    }
+                });
+
+                // 同步更新复选框顺序
+                updateCheckboxOrder();
+            }
+        });
+    } else {
+        console.warn('SortableJS not loaded, drag and drop not available');
+    }
+});
+
+// 已选目的地数组（用于每日行程选择）
+let selectedDestinationsForDays = [];
+
 document.getElementById('days').addEventListener('change', function() {
     const days = parseInt(this.value);
     const container = document.getElementById('days-container');
     container.innerHTML = '';
-    
+
+    // 更新已选目的地列表（用于下拉选择）
+    updateSelectedDestinationsForDays();
+
     for (let i = 1; i <= days; i++) {
         const dayHTML = `
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">第 ${i} 天</h6>
+            <div class="card mb-3 day-card" data-day="${i}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-calendar-day"></i> 第 ${i} 天</h6>
+                    <span class="badge bg-primary day-destination-badge" id="day_${i}_badge">未选择目的地</span>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">标题</label>
-                        <input type="text" class="form-control" name="day_${i}_title" placeholder="第${i}天行程标题">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">当天目的地</label>
+                            <select class="form-select day-destination-select" name="day_${i}_destination" id="day_${i}_destination" data-day="${i}">
+                                <option value="">-- 选择当天所在目的地 --</option>
+                                ${generateDestinationOptions()}
+                            </select>
+                            <div class="form-text">选择第${i}天所在的城市/目的地</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">当天标题</label>
+                            <input type="text" class="form-control" name="day_${i}_title" id="day_${i}_title" placeholder="第${i}天行程标题">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">描述</label>
@@ -113,12 +474,77 @@ document.getElementById('days').addEventListener('change', function() {
         `;
         container.innerHTML += dayHTML;
     }
+
+    // 绑定目的地选择事件
+    bindDestinationSelectEvents();
 });
+
+// 生成目的地选项
+function generateDestinationOptions() {
+    if (selectedDestinationsForDays.length === 0) {
+        return '<option value="" disabled>请先在上方的选择目的地</option>';
+    }
+    return selectedDestinationsForDays.map(dest =>
+        `<option value="${dest.id}">${dest.name}</option>`
+    ).join('');
+}
+
+// 更新用于每日行程的目的地列表
+function updateSelectedDestinationsForDays() {
+    selectedDestinationsForDays = selectedDestinations;
+
+    // 更新所有已存在的日行程卡片中的目的地选择器
+    document.querySelectorAll('.day-destination-select').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = `
+            <option value="">-- 选择当天所在目的地 --</option>
+            ${generateDestinationOptions()}
+        `;
+        select.value = currentValue;
+    });
+}
+
+// 绑定目的地选择事件
+function bindDestinationSelectEvents() {
+    document.querySelectorAll('.day-destination-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const day = this.dataset.day;
+            const destId = parseInt(this.value);
+            const badge = document.getElementById(`day_${day}_badge`);
+
+            if (destId) {
+                const dest = selectedDestinationsForDays.find(d => d.id === destId);
+                if (dest) {
+                    badge.textContent = dest.name;
+                    badge.classList.remove('bg-secondary');
+                    badge.classList.add('bg-success');
+
+                    // 自动填充标题建议
+                    const titleInput = document.getElementById(`day_${day}_title`);
+                    if (titleInput && !titleInput.value) {
+                        titleInput.value = `探索${dest.name}`;
+                    }
+                }
+            } else {
+                badge.textContent = '未选择目的地';
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-secondary');
+            }
+        });
+    });
+}
+
+// 当已选目的地变化时，更新每日行程的目的地选项
+const originalUpdateSelectedDestinationsUI = updateSelectedDestinationsUI;
+updateSelectedDestinationsUI = function() {
+    originalUpdateSelectedDestinationsUI();
+    updateSelectedDestinationsForDays();
+};
 
 document.getElementById('cover_image').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const preview = document.getElementById('image-preview');
-    
+
     if (file) {
         if (file.size > 16 * 1024 * 1024) {
             alert('文件大小不能超过 16MB');
@@ -126,7 +552,7 @@ document.getElementById('cover_image').addEventListener('change', function(e) {
             preview.innerHTML = '';
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.innerHTML = `

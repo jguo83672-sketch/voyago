@@ -270,8 +270,16 @@ def create_destination():
             description=request.form.get('description'),
             cover_image=cover_image,
             rating=float(request.form.get('rating', 0)),
-            tags=request.form.get('tags')
+            tags=request.form.get('tags'),
+            city=request.form.get('city')
         )
+
+        # 保存经纬度
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        if latitude and longitude:
+            destination.latitude = float(latitude)
+            destination.longitude = float(longitude)
 
         # 根据类型设置字段
         if region_type == 'domestic':
@@ -457,7 +465,7 @@ def create_itinerary():
             file = request.files['cover_image']
             if file.filename:
                 cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'itineraries')
-        
+
         itinerary = Itinerary(
             title=request.form.get('title'),
             description=request.form.get('description'),
@@ -468,9 +476,10 @@ def create_itinerary():
             user_id=current_user.id,
             cover_image=cover_image
         )
+
         db.session.add(itinerary)
         db.session.flush()
-        
+
         # 处理多目的地
         destination_ids = request.form.getlist('destination_ids')
         if destination_ids:
@@ -478,25 +487,28 @@ def create_itinerary():
                 destination = Destination.query.get(int(dest_id))
                 if destination:
                     itinerary.destinations.append(destination)
-        
+
+        # 创建每日行程，支持为每天选择目的地
         for i in range(1, itinerary.days + 1):
             day_title = request.form.get(f'day_{i}_title', f'第{i}天')
             day_description = request.form.get(f'day_{i}_description', '')
             day_activities = request.form.get(f'day_{i}_activities', '')
-            
+            day_destination_id = request.form.get(f'day_{i}_destination', type=int)
+
             itinerary_day = ItineraryDay(
                 day_number=i,
                 title=day_title,
                 description=day_description,
                 activities=day_activities,
-                itinerary_id=itinerary.id
+                itinerary_id=itinerary.id,
+                destination_id=day_destination_id
             )
             db.session.add(itinerary_day)
-        
+
         db.session.commit()
         flash('行程创建成功', 'success')
         return redirect(url_for('itinerary_detail', id=itinerary.id))
-    
+
     destinations = Destination.query.all()
     return render_template('create_itinerary.html', destinations=destinations)
 
@@ -611,13 +623,21 @@ def edit_destination(id):
             if file.filename:
                 destination.cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'destinations')
                 if old_image:
-                    delete_file(old_image)
+                    delete_file(old_image, app.config['UPLOAD_FOLDER'])
 
         destination.name = request.form.get('name')
         destination.region_type = request.form.get('region_type', destination.region_type)
         destination.description = request.form.get('description')
         destination.rating = float(request.form.get('rating', 0))
         destination.tags = request.form.get('tags')
+        destination.city = request.form.get('city')
+
+        # 更新经纬度
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        if latitude and longitude:
+            destination.latitude = float(latitude)
+            destination.longitude = float(longitude)
 
         # 根据类型更新字段
         if destination.region_type == 'domestic':
@@ -643,7 +663,7 @@ def edit_destination(id):
 def delete_destination(id):
     destination = Destination.query.get_or_404(id)
     if destination.cover_image:
-        delete_file(destination.cover_image)
+        delete_file(destination.cover_image, app.config['UPLOAD_FOLDER'])
     db.session.delete(destination)
     db.session.commit()
     flash('目的地已删除', 'success')
@@ -662,7 +682,7 @@ def edit_itinerary(id):
             if file.filename:
                 itinerary.cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'itineraries')
                 if old_image:
-                    delete_file(old_image)
+                    delete_file(old_image, app.config['UPLOAD_FOLDER'])
 
         itinerary.title = request.form.get('title')
         itinerary.description = request.form.get('description')
@@ -677,13 +697,51 @@ def edit_itinerary(id):
 
     return render_template('edit_itinerary.html', itinerary=itinerary)
 
+
+@app.route('/itinerary/<int:id>/days/update', methods=['POST'])
+@login_required
+def update_itinerary_days(id):
+    """批量更新每日行程"""
+    itinerary = Itinerary.query.get_or_404(id)
+
+    # 检查权限
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    try:
+        data = request.get_json()
+        days_data = data.get('days', [])
+
+        for day_data in days_data:
+            day_id = day_data.get('day_id')
+            day = ItineraryDay.query.get(day_id)
+
+            if day and day.itinerary_id == id:
+                day.title = day_data.get('title', day.title)
+                day.description = day_data.get('description', day.description)
+                day.activities = day_data.get('activities', day.activities)
+
+                # 更新目的地
+                destination_id = day_data.get('destination_id')
+                if destination_id:
+                    day.destination_id = destination_id
+                else:
+                    day.destination_id = None
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': '每日行程更新成功'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # 行程删除
 @app.route('/itinerary/<int:id>/delete', methods=['POST'])
 @login_required
 def delete_itinerary(id):
     itinerary = Itinerary.query.get_or_404(id)
     if itinerary.cover_image:
-        delete_file(itinerary.cover_image)
+        delete_file(itinerary.cover_image, app.config['UPLOAD_FOLDER'])
     db.session.delete(itinerary)
     db.session.commit()
     flash('行程已删除', 'success')
@@ -702,7 +760,7 @@ def edit_guide(id):
             if file.filename:
                 guide.cover_image = save_upload_file(file, app.config['UPLOAD_FOLDER'], 'guides')
                 if old_image:
-                    delete_file(old_image)
+                    delete_file(old_image, app.config['UPLOAD_FOLDER'])
 
         guide.title = request.form.get('title')
         guide.content = request.form.get('content')
@@ -722,7 +780,7 @@ def edit_guide(id):
 def delete_guide(id):
     guide = Guide.query.get_or_404(id)
     if guide.cover_image:
-        delete_file(guide.cover_image)
+        delete_file(guide.cover_image, app.config['UPLOAD_FOLDER'])
     db.session.delete(guide)
     db.session.commit()
     flash('攻略已删除', 'success')
@@ -997,7 +1055,7 @@ def edit_community(id):
 
         if request.files.get('cover_image'):
             if community.cover_image:
-                delete_file(community.cover_image)
+                delete_file(community.cover_image, app.config['UPLOAD_FOLDER'])
             community.cover_image = save_upload_file(request.files.get('cover_image'), 'communities')
 
         db.session.commit()
@@ -1184,7 +1242,7 @@ def edit_event(id):
 
         if request.files.get('cover_image'):
             if event.cover_image:
-                delete_file(event.cover_image)
+                delete_file(event.cover_image, app.config['UPLOAD_FOLDER'])
             event.cover_image = save_upload_file(request.files.get('cover_image'), 'events')
 
         db.session.commit()
@@ -1225,6 +1283,14 @@ def add_footprint():
             note=note,
             rating=rating
         )
+
+        # 保存经纬度
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        if latitude and longitude:
+            footprint.latitude = float(latitude)
+            footprint.longitude = float(longitude)
+
         db.session.add(footprint)
         db.session.commit()
 
@@ -1976,6 +2042,135 @@ def order_detail(id):
         return redirect(url_for('orders'))
 
     return render_template('order_detail.html', order=order)
+
+
+# ==================== 每日详细行程功能 ====================
+
+@app.route('/itinerary/<int:itinerary_id>/day/<int:day_number>')
+@login_required
+def day_detail(itinerary_id, day_number):
+    """每日详细行程页面 - 开启我在...的旅程"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+    day = ItineraryDay.query.filter_by(itinerary_id=itinerary_id, day_number=day_number).first_or_404()
+
+    # 检查权限
+    if itinerary.user_id != current_user.id:
+        flash('您没有权限编辑此行程', 'danger')
+        return redirect(url_for('itinerary_detail', id=itinerary_id))
+
+    # 获取所有可选目的地（行程关联的目的地）
+    available_destinations = itinerary.destinations if itinerary.destinations else Destination.query.all()
+
+    return render_template('day_detail.html',
+                         itinerary=itinerary,
+                         day=day,
+                         available_destinations=available_destinations)
+
+
+@app.route('/itinerary/<int:itinerary_id>/day/<int:day_number>/edit', methods=['POST'])
+@login_required
+def edit_day_detail(itinerary_id, day_number):
+    """编辑每日详细行程"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+    day = ItineraryDay.query.filter_by(itinerary_id=itinerary_id, day_number=day_number).first_or_404()
+
+    # 检查权限
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    try:
+        # 更新基本信息
+        day.title = request.form.get('title', day.title)
+        day.description = request.form.get('description', day.description)
+
+        # 更新自定义目的地名称（自由输入）
+        destination_name = request.form.get('destination_name')
+        if destination_name is not None:
+            day.custom_destination = destination_name if destination_name.strip() else None
+
+        # 更新关联的目的地ID（从现有目的地选择）
+        destination_id = request.form.get('destination_id', type=int)
+        if destination_id:
+            day.destination_id = destination_id
+
+        # 更新地理坐标
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        if latitude and longitude:
+            day.latitude = float(latitude)
+            day.longitude = float(longitude)
+
+        # 更新活动（JSON格式）
+        activities_json = request.form.get('activities')
+        if activities_json:
+            day.activities = activities_json
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '保存成功',
+            'day': {
+                'id': day.id,
+                'title': day.title,
+                'destination': day.display_location
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/itinerary/<int:itinerary_id>/day/<int:day_number>/activities', methods=['GET', 'POST'])
+@login_required
+def manage_day_activities(itinerary_id, day_number):
+    """管理每日活动"""
+    itinerary = Itinerary.query.get_or_404(itinerary_id)
+    day = ItineraryDay.query.filter_by(itinerary_id=itinerary_id, day_number=day_number).first_or_404()
+
+    # 检查权限
+    if itinerary.user_id != current_user.id:
+        return jsonify({'success': False, 'message': '权限不足'}), 403
+
+    if request.method == 'GET':
+        # 返回当前活动列表
+        return jsonify({
+            'success': True,
+            'activities': day.activities_list
+        })
+
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            activities = data.get('activities', [])
+
+            # 验证活动格式
+            validated_activities = []
+            for activity in activities:
+                validated_activity = {
+                    'time': activity.get('time', ''),
+                    'activity': activity.get('activity', ''),
+                    'location': activity.get('location', ''),
+                    'latitude': activity.get('latitude'),
+                    'longitude': activity.get('longitude'),
+                    'estimated_cost': activity.get('estimated_cost', ''),
+                    'notes': activity.get('notes', '')
+                }
+                validated_activities.append(validated_activity)
+
+            day.activities = json.dumps(validated_activities, ensure_ascii=False)
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': '活动保存成功',
+                'activities': validated_activities
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
 
 
 # 全局上下文处理器

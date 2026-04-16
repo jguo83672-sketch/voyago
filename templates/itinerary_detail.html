@@ -58,14 +58,37 @@
                 </div>
             </div>
 
+            {% if itinerary.destinations %}
+            <!-- 地图展示 -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-map"></i> 行程路线
+                </div>
+                <div class="card-body">
+                    <div id="itinerary-map" style="height: 400px;"></div>
+                </div>
+            </div>
+            {% endif %}
+
             <h3 class="fw-bold mb-4"><i class="bi bi-calendar-check text-primary"></i> 详细行程</h3>
             <div class="timeline">
                 {% for day in days %}
-                <div class="card mb-3 fade-in">
-                    <div class="card-header">
+                <div class="card mb-3 fade-in day-card" id="day-{{ day.day_number }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">
                             <i class="bi bi-calendar-day"></i> 第{{ day.day_number }}天: {{ day.title }}
+                            {% if day.destination %}
+                            <span class="badge bg-success ms-2">
+                                <i class="bi bi-geo-alt"></i> {{ day.destination.name }}
+                            </span>
+                            {% endif %}
                         </h5>
+                        {% if current_user.is_authenticated and current_user.id == itinerary.user_id %}
+                        <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-map"></i> 开启我在{% if day.destination %}{{ day.destination.name }}{% else %}这里{% endif %}的旅程
+                        </a>
+                        {% endif %}
                     </div>
                     <div class="card-body">
                         <p>{{ day.description }}</p>
@@ -73,9 +96,29 @@
                         <h6><i class="bi bi-list-check"></i> 活动安排:</h6>
                         <ul>
                             {% for activity in day.activities_list %}
-                            <li>{{ activity }}</li>
+                            <li>
+                                {% if activity is mapping %}
+                                    <strong>{{ activity.time }}</strong> -
+                                    {{ activity.activity }}
+                                    {% if activity.location %}
+                                    <small class="text-muted">(@ {{ activity.location }})</small>
+                                    {% endif %}
+                                    {% if activity.estimated_cost %}
+                                    <span class="badge bg-light text-dark">{{ activity.estimated_cost }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ activity }}
+                                {% endif %}
+                            </li>
                             {% endfor %}
                         </ul>
+                        {% endif %}
+                        {% if day.latitude and day.longitude %}
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-geo"></i> 位置: {{ "%.4f"|format(day.latitude) }}, {{ "%.4f"|format(day.longitude) }}
+                            </small>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -196,7 +239,46 @@
 {% endblock %}
 
 {% block scripts %}
+{% if itinerary.destinations %}
+<!-- Leaflet 地图库 -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- 地图助手 -->
+<script src="{{ url_for('static', filename='js/map-helper.js') }}"></script>
+{% endif %}
+
 <script>
+// 初始化地图
+document.addEventListener('DOMContentLoaded', function() {
+    {% if itinerary.destinations %}
+    try {
+        // 收集所有目的地的坐标
+        const destinations = [
+            {% for dest in itinerary.destinations %}
+            {
+                lat: {{ dest.latitude }},
+                lng: {{ dest.longitude }},
+                title: {{ dest.name | tojson | safe }},
+                description: {{ dest.country | tojson | safe }},
+                sequence: {{ loop.index }}
+            },
+            {% endfor %}
+        ];
+
+        // 创建带路线的地图
+        createDisplayMap('itinerary-map', destinations, {
+            defaultLat: {{ itinerary.destinations[0].latitude }},
+            defaultLng: {{ itinerary.destinations[0].longitude }},
+            defaultZoom: 6,
+            showRoute: true,
+            routeColor: '#3b82f6'
+        });
+    } catch (error) {
+        console.error('地图初始化失败:', error);
+    }
+    {% endif %}
+});
+
 async function toggleLike(type, id) {
     try {
         const response = await fetch(`/like/${type}/${id}`);

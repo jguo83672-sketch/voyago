@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block title %}第{{ day.day_number }}天 - {{ itinerary.title }} - Voyago{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 左侧：地图和位置选择 -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-map"></i> 第{{ day.day_number }}天行程规划
+                    {% if day.destination %}
+                    <span class="badge bg-light text-primary ms-2">{{ day.destination.name }}</span>
+                    {% endif %}
+                </h5>
+                <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}#day-{{ day.day_number }}" class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-left"></i> 返回行程
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <!-- 地图容器 -->
+                <div id="day-map" style="height: 400px;"></div>
+            </div>
+            <div class="card-footer">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 点击地图选择位置，或搜索地点
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span id="selected-location" class="badge bg-success" style="display: none;">
+                            <i class="bi bi-geo-alt"></i> 已选择位置
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 基本信息编辑 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> 当天基本信息</h5>
+            </div>
+            <div class="card-body">
+                <form id="day-basic-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">当天标题</label>
+                            <input type="text" class="form-control" id="day_title" name="title"
+                                   value="{{ day.title or '' }}" placeholder="例如：探索曼谷老城区">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">当天目的地/城市</label>
+                            <input type="text" class="form-control" id="day_destination_name" name="destination_name"
+                                   value="{{ day.custom_destination if day.custom_destination else (day.destination.name if day.destination else '') }}" placeholder="例如：曼谷、芭提雅">
+                            <small class="text-muted">自由输入目的地名称，不需要从列表选择</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">行程描述</label>
+                        <textarea class="form-control" id="day_description" name="description" rows="3"
+                                  placeholder="描述当天的整体行程安排...">{{ day.description or '' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">纬度</label>
+                            <input type="number" step="any" class="form-control" id="day_latitude" name="latitude"
+                                   value="{{ day.latitude or '' }}" placeholder="点击地图选择">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">经度</label>
+                            <input type="number" step="any" class="form-control" id="day_longitude" name="longitude"
+                                   value="{{ day.longitude or '' }}" placeholder="点击地图选择">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveBasicInfo()">
+                        <i class="bi bi-save"></i> 保存基本信息
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧：活动安排 -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> 活动安排</h5>
+                <button type="button" class="btn btn-sm btn-light" onclick="addActivity()">
+                    <i class="bi bi-plus"></i> 添加活动
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="activities-list">
+                    <!-- 活动列表将在这里动态生成 -->
+                </div>
+                <div id="empty-activities" class="text-center text-muted py-4">
+                    <i class="bi bi-calendar-plus" style="font-size: 2rem;"></i>
+                    <p class="mt-2">还没有添加活动<br>点击上方按钮添加</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-success w-100" onclick="saveActivities()">
+                    <i class="bi bi-save"></i> 保存所有活动
+                </button>
+            </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> 快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if day.day_number > 1 %}
+                    <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number-1) }}"
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-up"></i> 上一天
+                    </a>
+                    {% endif %}
+                    {% if day.day_number < itinerary.days %}
+                    <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number+1) }}"
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-down"></i> 下一天
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye"></i> 查看完整行程
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 活动编辑模态框 -->
+<div class="modal fade" id="activityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑活动</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="activity-form">
+                    <input type="hidden" id="activity_index" value="-1">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">时间</label>
+                            <input type="time" class="form-control" id="activity_time" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">活动名称</label>
+                            <input type="text" class="form-control" id="activity_name" placeholder="例如：参观大皇宫" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">搜索地点</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="location_search" placeholder="搜索景点、餐厅、酒店等...">
+                            <button type="button" class="btn btn-outline-primary" onclick="searchLocation()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                        </div>
+                        <div id="search-results" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地点名称</label>
+                        <input type="text" class="form-control" id="activity_location" placeholder="活动具体位置">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">纬度</label>
+                            <input type="number" step="any" class="form-control" id="activity_latitude" readonly>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">经度</label>
+                            <input type="number" step="any" class="form-control" id="activity_longitude" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">预计费用</label>
+                        <input type="text" class="form-control" id="activity_cost" placeholder="例如：500泰铢">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" id="activity_notes" rows="2" placeholder="其他注意事项..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="deleteActivityBtn" onclick="deleteActivity()" style="display: none;">删除</button>
+                <button type="button" class="btn btn-primary" onclick="saveActivity()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet 地图库 -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// 高德地图Key
+const AMAP_KEY = '8c5652200d248bdd1f8ba1d0cd966392';
+
+// 全局变量
+let map;
+let currentMarker = null;
+let activityMarkers = [];
+let activities = [];
+let searchMarkers = [];
+
+// 初始化
+{% if day.activities %}
+try {
+    activities = {{ day.activities_list | tojson | safe }};
+} catch (e) {
+    activities = [];
+}
+{% endif %}
+
+// 初始化地图
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    renderActivities();
+});
+
+function initMap() {
+    // 默认位置（使用目的地坐标或默认坐标）
+    let defaultLat = 13.7563; // 曼谷默认
+    let defaultLng = 100.5018;
+
+    {% if day.destination and day.destination.latitude %}
+    defaultLat = {{ day.destination.latitude }};
+    defaultLng = {{ day.destination.longitude }};
+    {% elif day.latitude %}
+    defaultLat = {{ day.latitude }};
+    defaultLng = {{ day.longitude }};
+    {% endif %}
+
+    // 创建地图
+    map = L.map('day-map').setView([defaultLat, defaultLng], 12);
+
+    // 添加高德地图图层
+    L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}&key=' + AMAP_KEY, {
+        subdomains: ['1', '2', '3', '4'],
+        minZoom: 3,
+        maxZoom: 18,
+        attribution: '© 高德地图'
+    }).addTo(map);
+
+    // 如果有保存的坐标，显示标记
+    {% if day.latitude and day.longitude %}
+    currentMarker = L.marker([{{ day.latitude }}, {{ day.longitude }}]).addTo(map);
+    document.getElementById('selected-location').style.display = 'inline-block';
+    {% endif %}
+
+    // 地图点击事件
+    map.on('click', function(e) {
+        updateDayLocation(e.latlng.lat, e.latlng.lng);
+    });
+
+    // 渲染活动标记
+    renderActivityMarkers();
+}
+
+// 搜索地点
+async function searchLocation() {
+    const keyword = document.getElementById('location_search').value.trim();
+    if (!keyword) {
+        alert('请输入搜索关键词');
+        return;
+    }
+
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '<div class="list-group-item text-center"><div class="spinner-border spinner-border-sm" role="status"></div> 搜索中...</div>';
+
+    try {
+        // 获取当前城市/区域作为搜索范围
+        let city = document.getElementById('day_destination_name').value || '';
+
+        // 使用高德地图POI搜索
+        const url = `https://restapi.amap.com/v3/place/text?key=${AMAP_KEY}&keywords=${encodeURIComponent(keyword)}&city=${encodeURIComponent(city)}&offset=10&page=1&extensions=all`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === '1' && data.pois && data.pois.length > 0) {
+            resultsContainer.innerHTML = '';
+            data.pois.forEach((poi, index) => {
+                const location = poi.location.split(',');
+                const lng = parseFloat(location[0]);
+                const lat = parseFloat(location[1]);
+
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${poi.name}</h6>
+                        <small class="text-muted">${poi.type || ''}</small>
+                    </div>
+                    <p class="mb-1 text-muted small">${poi.address || '暂无地址'}</p>
+                `;
+                item.onclick = function(e) {
+                    e.preventDefault();
+                    selectSearchResult(poi.name, lat, lng);
+                };
+                resultsContainer.appendChild(item);
+            });
+        } else {
+            resultsContainer.innerHTML = '<div class="list-group-item text-muted">未找到相关地点</div>';
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+        resultsContainer.innerHTML = '<div class="list-group-item text-danger">搜索失败，请重试</div>';
+    }
+}
+
+// 选择搜索结果
+function selectSearchResult(name, lat, lng) {
+    document.getElementById('activity_location').value = name;
+    document.getElementById('activity_latitude').value = lat.toFixed(6);
+    document.getElementById('activity_longitude').value = lng.toFixed(6);
+
+    // 清除之前的搜索标记
+    searchMarkers.forEach(marker => map.removeLayer(marker));
+    searchMarkers = [];
+
+    // 在地图上显示标记
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`<b>${name}</b>`).openPopup();
+    searchMarkers.push(marker);
+
+    // 移动地图到该位置
+    map.setView([lat, lng], 15);
+
+    // 清空搜索结果
+    document.getElementById('search-results').innerHTML = '';
+}
+
+// 更新当天位置
+function updateDayLocation(lat, lng) {
+    // 移除旧标记
+    if (currentMarker) {
+        map.removeLayer(currentMarker);
+    }
+
+    // 添加新标记
+    currentMarker = L.marker([lat, lng]).addTo(map);
+
+    // 更新表单
+    document.getElementById('day_latitude').value = lat.toFixed(6);
+    document.getElementById('day_longitude').value = lng.toFixed(6);
+    document.getElementById('selected-location').style.display = 'inline-block';
+
+    // 反向地理编码
+    reverseGeocodeForDay(lat, lng);
+}
+
+async function reverseGeocodeForDay(lat, lng) {
+    try {
+        const response = await fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_KEY}&location=${lng},${lat}`);
+        const data = await response.json();
+        if (data.regeocode && !document.getElementById('day_description').value) {
+            const address = data.regeocode.formatted_address;
+            document.getElementById('day_description').value = `位于${address}附近`;
+        }
+    } catch (e) {
+        console.error('反向地理编码失败:', e);
+    }
+}
+
+// 渲染活动列表
+function renderActivities() {
+    const container = document.getElementById('activities-list');
+    const emptyMsg = document.getElementById('empty-activities');
+
+    if (activities.length === 0) {
+        container.innerHTML = '';
+        emptyMsg.style.display = 'block';
+        return;
+    }
+
+    emptyMsg.style.display = 'none';
+    container.innerHTML = '';
+
+    // 按时间排序
+    const sortedActivities = [...activities].sort((a, b) => {
+        return (a.time || '00:00').localeCompare(b.time || '00:00');
+    });
+
+    sortedActivities.forEach((activity, index) => {
+        const originalIndex = activities.indexOf(activity);
+        const hasLocation = activity.latitude && activity.longitude;
+
+        const activityHTML = `
+            <div class="activity-item card mb-2" data-index="${originalIndex}">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-primary me-2">${activity.time || '--:--'}</span>
+                                <strong>${activity.activity || '未命名活动'}</strong>
+                            </div>
+                            ${activity.location ? `<small class="text-muted d-block"><i class="bi bi-geo-alt"></i> ${activity.location}</small>` : ''}
+                            ${activity.estimated_cost ? `<small class="text-success"><i class="bi bi-currency-dollar"></i> ${activity.estimated_cost}</small>` : ''}
+                        </div>
+                        <div class="d-flex align-items-center">
+                            ${hasLocation ? '<i class="bi bi-geo-alt-fill text-success me-2"></i>' : ''}
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editActivity(${originalIndex})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += activityHTML;
+    });
+}
+
+// 渲染活动标记
+function renderActivityMarkers() {
+    // 清除旧标记
+    activityMarkers.forEach(marker => map.removeLayer(marker));
+    activityMarkers = [];
+
+    activities.forEach((activity, index) => {
+        if (activity.latitude && activity.longitude) {
+            const marker = L.marker([activity.latitude, activity.longitude])
+                .addTo(map)
+                .bindPopup(`<b>${activity.time || ''}</b><br>${activity.activity}<br>${activity.location || ''}`);
+            activityMarkers.push(marker);
+        }
+    });
+}
+
+// 添加新活动
+function addActivity() {
+    document.getElementById('activity-form').reset();
+    document.getElementById('activity_index').value = -1;
+    document.getElementById('deleteActivityBtn').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
+
+    // 清除搜索标记
+    searchMarkers.forEach(marker => map.removeLayer(marker));
+    searchMarkers = [];
+
+    // 设置默认时间（下一个整点）
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    document.getElementById('activity_time').value = `${hours}:00`;
+
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    modal.show();
+}
+
+// 编辑活动
+function editActivity(index) {
+    const activity = activities[index];
+    document.getElementById('activity_index').value = index;
+    document.getElementById('activity_time').value = activity.time || '';
+    document.getElementById('activity_name').value = activity.activity || '';
+    document.getElementById('activity_location').value = activity.location || '';
+    document.getElementById('activity_latitude').value = activity.latitude || '';
+    document.getElementById('activity_longitude').value = activity.longitude || '';
+    document.getElementById('activity_cost').value = activity.estimated_cost || '';
+    document.getElementById('activity_notes').value = activity.notes || '';
+    document.getElementById('deleteActivityBtn').style.display = 'inline-block';
+    document.getElementById('search-results').innerHTML = '';
+
+    // 如果有坐标，在地图上显示
+    if (activity.latitude && activity.longitude) {
+        searchMarkers.forEach(marker => map.removeLayer(marker));
+        searchMarkers = [];
+        const marker = L.marker([activity.latitude, activity.longitude]).addTo(map);
+        marker.bindPopup(`<b>${activity.activity}</b>`).openPopup();
+        searchMarkers.push(marker);
+        map.setView([activity.latitude, activity.longitude], 15);
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    modal.show();
+}
+
+// 保存活动
+function saveActivity() {
+    const index = parseInt(document.getElementById('activity_index').value);
+    const activity = {
+        time: document.getElementById('activity_time').value,
+        activity: document.getElementById('activity_name').value,
+        location: document.getElementById('activity_location').value,
+        latitude: document.getElementById('activity_latitude').value || null,
+        longitude: document.getElementById('activity_longitude').value || null,
+        estimated_cost: document.getElementById('activity_cost').value,
+        notes: document.getElementById('activity_notes').value
+    };
+
+    if (index === -1) {
+        activities.push(activity);
+    } else {
+        activities[index] = activity;
+    }
+
+    renderActivities();
+    renderActivityMarkers();
+
+    // 清除搜索标记
+    searchMarkers.forEach(marker => map.removeLayer(marker));
+    searchMarkers = [];
+
+    bootstrap.Modal.getInstance(document.getElementById('activityModal')).hide();
+}
+
+// 删除活动
+function deleteActivity() {
+    const index = parseInt(document.getElementById('activity_index').value);
+    if (index >= 0 && index < activities.length) {
+        activities.splice(index, 1);
+        renderActivities();
+        renderActivityMarkers();
+        bootstrap.Modal.getInstance(document.getElementById('activityModal')).hide();
+    }
+}
+
+// 保存基本信息
+async function saveBasicInfo() {
+    const formData = new FormData();
+    formData.append('title', document.getElementById('day_title').value);
+    formData.append('description', document.getElementById('day_description').value);
+    formData.append('destination_name', document.getElementById('day_destination_name').value);
+    formData.append('latitude', document.getElementById('day_latitude').value);
+    formData.append('longitude', document.getElementById('day_longitude').value);
+
+    try {
+        const response = await fetch('{{ url_for("edit_day_detail", itinerary_id=itinerary.id, day_number=day.day_number) }}', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert('基本信息保存成功！');
+            location.reload();
+        } else {
+            alert('保存失败：' + data.message);
+        }
+    } catch (e) {
+        alert('保存失败：' + e.message);
+    }
+}
+
+// 保存活动
+async function saveActivities() {
+    try {
+        const response = await fetch('{{ url_for("manage_day_activities", itinerary_id=itinerary.id, day_number=day.day_number) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ activities: activities })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert('活动保存成功！');
+        } else {
+            alert('保存失败：' + data.message);
+        }
+    } catch (e) {
+        alert('保存失败：' + e.message);
+    }
+}
+</script>
+
+<style>
+.activity-item {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.activity-item:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#day-map {
+    min-height: 400px;
+}
+#search-results .list-group-item {
+    cursor: pointer;
+}
+#search-results .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
