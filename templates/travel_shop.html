@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
             <li class="breadcrumb-item active">旅行用品商店</li>
         </ol>
     </nav>
@@ -21,7 +21,7 @@
             {% for product in featured_products %}
             <div class="col-md-4 col-sm-6 mb-4">
                 <div class="card h-100 border-0 shadow-sm product-card">
-                    <a href="{{ url_for('product_detail', id=product.id) }}">
+                    <a href="{{ url_for('ecommerce.product_detail', id=product.id) }}">
                         <img src="{{ product.image_url or url_for('static', filename='images/product-placeholder.jpg') }}"
                              class="card-img-top" alt="{{ product.name }}"
                              onerror="this.src='https://via.placeholder.com/400x300?text={{ product.name }}'">
@@ -55,12 +55,12 @@
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        <a href="{{ url_for('travel_shop') }}"
+                        <a href="{{ url_for('ecommerce.travel_shop') }}"
                            class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
                             <i class="fas fa-th-large"></i> 全部商品
                         </a>
                         {% for category in categories %}
-                        <a href="{{ url_for('travel_shop', category=category, sort=current_sort) }}"
+                        <a href="{{ url_for('ecommerce.travel_shop', category=category, sort=current_sort) }}"
                            class="list-group-item list-group-item-action {% if current_category == category %}active{% endif %}">
                             {{ category }}
                         </a>
@@ -81,23 +81,23 @@
                         </div>
                         <div class="col-md-6 text-right">
                             <div class="btn-group">
-                                <a href="{{ url_for('travel_shop', category=current_category, sort='default') }}"
+                                <a href="{{ url_for('ecommerce.travel_shop', category=current_category, sort='default') }}"
                                    class="btn btn-outline-secondary {% if current_sort == 'default' %}active{% endif %}">
                                     默认
                                 </a>
-                                <a href="{{ url_for('travel_shop', category=current_category, sort='sales') }}"
+                                <a href="{{ url_for('ecommerce.travel_shop', category=current_category, sort='sales') }}"
                                    class="btn btn-outline-secondary {% if current_sort == 'sales' %}active{% endif %}">
                                     销量
                                 </a>
-                                <a href="{{ url_for('travel_shop', category=current_category, sort='price_asc') }}"
+                                <a href="{{ url_for('ecommerce.travel_shop', category=current_category, sort='price_asc') }}"
                                    class="btn btn-outline-secondary {% if current_sort == 'price_asc' %}active{% endif %}">
                                     价格 ↑
                                 </a>
-                                <a href="{{ url_for('travel_shop', category=current_category, sort='price_desc') }}"
+                                <a href="{{ url_for('ecommerce.travel_shop', category=current_category, sort='price_desc') }}"
                                    class="btn btn-outline-secondary {% if current_sort == 'price_desc' %}active{% endif %}">
                                     价格 ↓
                                 </a>
-                                <a href="{{ url_for('travel_shop', category=current_category, sort='rating') }}"
+                                <a href="{{ url_for('ecommerce.travel_shop', category=current_category, sort='rating') }}"
                                    class="btn btn-outline-secondary {% if current_sort == 'rating' %}active{% endif %}">
                                     评分
                                 </a>
@@ -112,7 +112,7 @@
                 {% for product in products.items %}
                 <div class="col-md-4 col-sm-6 mb-4">
                     <div class="card h-100 border-0 shadow-sm product-card">
-                        <a href="{{ url_for('product_detail', id=product.id) }}">
+                        <a href="{{ url_for('ecommerce.product_detail', id=product.id) }}">
                         <img src="{{ product.image_url or url_for('static', filename='images/product-placeholder.jpg') }}"
                              class="card-img-top" alt="{{ product.name }}"
                              onerror="this.src='https://via.placeholder.com/400x300?text={{ product.name }}'">
@@ -154,7 +154,7 @@
                 <ul class="pagination justify-content-center">
                     {% if products.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('travel_shop', page=products.prev_num, category=current_category, sort=current_sort) }}">
+                        <a class="page-link" href="{{ url_for('ecommerce.travel_shop', page=products.prev_num, category=current_category, sort=current_sort) }}">
                             上一页
                         </a>
                     </li>
@@ -168,7 +168,7 @@
                     </li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('travel_shop', page=page_num, category=current_category, sort=current_sort) }}">
+                        <a class="page-link" href="{{ url_for('ecommerce.travel_shop', page=page_num, category=current_category, sort=current_sort) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -182,7 +182,7 @@
 
                     {% if products.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('travel_shop', page=products.next_num, category=current_category, sort=current_sort) }}">
+                        <a class="page-link" href="{{ url_for('ecommerce.travel_shop', page=products.next_num, category=current_category, sort=current_sort) }}">
                             下一页
                         </a>
                     </li>
@@ -233,7 +233,7 @@ document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
         const formData = new FormData();
         formData.append('quantity', 1);
 
-        fetch(`{{ url_for('add_to_cart', product_id=0) }}`.replace('0', productId), {
+        fetch(`{{ url_for('ecommerce.add_to_cart', product_id=0) }}`.replace('0', productId), {
             method: 'POST',
             body: formData
         })

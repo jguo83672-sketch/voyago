@@ -26,14 +26,14 @@
             </div>
             <div class="d-flex gap-2">
                 {% if current_user.is_authenticated and current_user.id == itinerary.user_id %}
-                <a href="{{ url_for('itinerary_prepare', itinerary_id=itinerary.id) }}" class="btn btn-success btn-lg">
+                <a href="{{ url_for('itinerary.itinerary_prepare', itinerary_id=itinerary.id) }}" class="btn btn-success btn-lg">
                     <i class="bi bi-suitcase"></i> 出行准备
                 </a>
-                <a href="{{ url_for('edit_itinerary', id=itinerary.id) }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('itinerary.edit_itinerary', id=itinerary.id) }}" class="btn btn-outline-primary">
                     <i class="bi bi-pencil"></i> 编辑
                 </a>
                 {% else %}
-                <a href="{{ url_for('travel_shop') }}" class="btn btn-success btn-lg">
+                <a href="{{ url_for('ecommerce.travel_shop') }}" class="btn btn-success btn-lg">
                     <i class="bi bi-bag"></i> 购买旅行用品
                 </a>
                 {% endif %}
@@ -84,7 +84,7 @@
                             {% endif %}
                         </h5>
                         {% if current_user.is_authenticated and current_user.id == itinerary.user_id %}
-                        <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
+                        <a href="{{ url_for('itinerary.day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
                            class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-map"></i> 开启我在{% if day.destination %}{{ day.destination.name }}{% else %}这里{% endif %}的旅程
                         </a>
@@ -130,7 +130,7 @@
                 <h3 class="mb-4"><i class="bi bi-chat-dots"></i> 评论 ({{ itinerary.comment_count }})</h3>
 
                 {% if current_user.is_authenticated %}
-                <form action="{{ url_for('add_itinerary_comment', id=itinerary.id) }}" method="POST" class="mb-4">
+                <form action="{{ url_for('itinerary.add_itinerary_comment', id=itinerary.id) }}" method="POST" class="mb-4">
                     <div class="card">
                         <div class="card-body">
                             <div class="mb-3">
@@ -142,7 +142,7 @@
                 </form>
                 {% else %}
                 <div class="alert alert-info mb-4">
-                    <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('login') }}">登录</a>后发表评论
+                    <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('auth.login') }}">登录</a>后发表评论
                 </div>
                 {% endif %}
 
@@ -210,7 +210,7 @@
                     <hr>
                     <div class="d-grid gap-2">
                         {% for dest in itinerary.destinations %}
-                        <a href="{{ url_for('destination_detail', id=dest.id) }}" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ url_for('destination.destination_detail', id=dest.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-geo-alt"></i> 查看{{ dest.name }}详情
                         </a>
                         {% endfor %}
@@ -223,7 +223,7 @@
                 <div class="card-body">
                     <h5 class="card-title fw-bold">管理操作</h5>
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('edit_itinerary', id=itinerary.id) }}" class="btn btn-outline-warning">
+                        <a href="{{ url_for('itinerary.edit_itinerary', id=itinerary.id) }}" class="btn btn-outline-warning">
                             <i class="bi bi-pencil"></i> 编辑行程
                         </a>
                         <button onclick="deleteItinerary()" class="btn btn-outline-danger">
@@ -306,7 +306,7 @@ function deleteItinerary() {
     if (confirm('确定要删除这个行程吗？此操作不可恢复。')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = "{{ url_for('delete_itinerary', id=itinerary.id) }}";
+        form.action = "{{ url_for('itinerary.delete_itinerary', id=itinerary.id) }}";
         document.body.appendChild(form);
         form.submit();
     }

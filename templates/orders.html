@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
             <li class="breadcrumb-item active">我的订单</li>
         </ol>
     </nav>
@@ -17,23 +17,23 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="btn-group" role="group">
-                <a href="{{ url_for('orders', status='all') }}"
+                <a href="{{ url_for('ecommerce.orders', status='all') }}"
                    class="btn {% if current_status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     全部
                 </a>
-                <a href="{{ url_for('orders', status='pending') }}"
+                <a href="{{ url_for('ecommerce.orders', status='pending') }}"
                    class="btn {% if current_status == 'pending' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     待付款
                 </a>
-                <a href="{{ url_for('orders', status='paid') }}"
+                <a href="{{ url_for('ecommerce.orders', status='paid') }}"
                    class="btn {% if current_status == 'paid' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     待发货
                 </a>
-                <a href="{{ url_for('orders', status='shipped') }}"
+                <a href="{{ url_for('ecommerce.orders', status='shipped') }}"
                    class="btn {% if current_status == 'shipped' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     待收货
                 </a>
-                <a href="{{ url_for('orders', status='delivered') }}"
+                <a href="{{ url_for('ecommerce.orders', status='delivered') }}"
                    class="btn {% if current_status == 'delivered' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     已完成
                 </a>
@@ -89,7 +89,7 @@
                                 <small class="text-muted">共 {{ order.item_count }} 件商品</small>
                             </p>
                             <h4 class="text-danger mb-2">¥{{ order.final_amount }}</h4>
-                            <a href="{{ url_for('order_detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('ecommerce.order_detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
                                 查看详情
                             </a>
                         </div>
@@ -106,7 +106,7 @@
         <ul class="pagination justify-content-center">
             {% if orders.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('orders', status=current_status, page=orders.prev_num) }}">
+                <a class="page-link" href="{{ url_for('ecommerce.orders', status=current_status, page=orders.prev_num) }}">
                     上一页
                 </a>
             </li>
@@ -120,7 +120,7 @@
             </li>
             {% else %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('orders', status=current_status, page=page_num) }}">
+                <a class="page-link" href="{{ url_for('ecommerce.orders', status=current_status, page=page_num) }}">
                     {{ page_num }}
                 </a>
             </li>
@@ -134,7 +134,7 @@
 
             {% if orders.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('orders', status=current_status, page=orders.next_num) }}">
+                <a class="page-link" href="{{ url_for('ecommerce.orders', status=current_status, page=orders.next_num) }}">
                     下一页
                 </a>
             </li>
@@ -148,7 +148,7 @@
         <i class="fas fa-box-open fa-5x text-muted mb-4"></i>
         <h3 class="mb-3">暂无订单</h3>
         <p class="text-muted mb-4">快去商城购买心仪的旅行用品吧！</p>
-        <a href="{{ url_for('travel_shop') }}" class="btn btn-primary btn-lg">
+        <a href="{{ url_for('ecommerce.travel_shop') }}" class="btn btn-primary btn-lg">
             <i class="fas fa-shopping-bag"></i> 去购物
         </a>
     </div>

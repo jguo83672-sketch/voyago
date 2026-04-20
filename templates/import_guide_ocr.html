@@ -43,7 +43,7 @@
                             <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="bi bi-magic"></i> 开始识别
                             </button>
-                            <a href="{{ url_for('create_guide') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('guide.create_guide') }}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle"></i> 取消
                             </a>
                         </div>
@@ -117,27 +117,60 @@ document.getElementById('ocrForm').addEventListener('submit', function(e) {
 
     // 使用 FormData 提交
     const formData = new FormData(this);
-    fetch('{{ url_for("ocr_analyze") }}', {
+    fetch('{{ url_for('guide.ocr_analyze') }}', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // 将识别结果传递到创建攻略页面
-            const params = new URLSearchParams();
-            params.append('title', data.data.title);
-            params.append('content', data.data.content);
-            params.append('category', data.data.category);
-            if (data.data.destination_id) {
-                params.append('destination_id', data.data.destination_id);
-            }
-            window.location.href = `{{ url_for('create_guide') }}?${params.toString()}`;
-        } else {
-            alert('识别失败: ' + data.error);
+    .then(initialData => {
+        if (!initialData.success) {
+            alert('识别失败: ' + initialData.error);
             document.getElementById('loading').style.display = 'none';
             document.getElementById('submitBtn').disabled = false;
+            return;
         }
+
+        const taskId = initialData.task_id;
+
+        const pollTask = () => {
+            fetch(`/api/tasks/${taskId}`)
+                .then(res => res.json())
+                .then(pollResult => {
+                    if (!pollResult.success) {
+                        alert(pollResult.message || '查询任务状态失败');
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('submitBtn').disabled = false;
+                        return;
+                    }
+
+                    if (pollResult.status === 'completed') {
+                        const data = pollResult.data;
+                        // 将识别结果传递到创建攻略页面
+                        const params = new URLSearchParams();
+                        params.append('title', data.title);
+                        params.append('content', data.content);
+                        params.append('category', data.category);
+                        if (data.destination_id) {
+                            params.append('destination_id', data.destination_id);
+                        }
+                        window.location.href = `{{ url_for('guide.create_guide') }}?${params.toString()}`;
+                    } else if (pollResult.status === 'failed') {
+                        alert('识别失败: ' + (pollResult.error || '未知错误'));
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('submitBtn').disabled = false;
+                    } else {
+                        // 继续轮询
+                        setTimeout(pollTask, 2000);
+                    }
+                })
+                .catch(error => {
+                    alert('查询状态请求失败: ' + error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                });
+        };
+
+        setTimeout(pollTask, 2000);
     })
     .catch(error => {
         alert('请求失败: ' + error);

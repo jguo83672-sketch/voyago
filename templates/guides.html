@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="bi bi-book"></i> 旅行攻略</h1>
     {% if current_user.is_authenticated %}
-    <a href="{{ url_for('create_guide') }}" class="btn btn-primary">
+    <a href="{{ url_for('guide.create_guide') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> 发布攻略
     </a>
     {% endif %}
@@ -14,11 +14,11 @@
 
 <div class="mb-4">
     <div class="btn-group">
-        <a href="{{ url_for('guides') }}" class="btn btn-outline-primary {% if not category %}active{% endif %}">全部</a>
-        <a href="{{ url_for('guides', category='美食') }}" class="btn btn-outline-primary {% if category == '美食' %}active{% endif %}">美食</a>
-        <a href="{{ url_for('guides', category='景点') }}" class="btn btn-outline-primary {% if category == '景点' %}active{% endif %}">景点</a>
-        <a href="{{ url_for('guides', category='购物') }}" class="btn btn-outline-primary {% if category == '购物' %}active{% endif %}">购物</a>
-        <a href="{{ url_for('guides', category='交通') }}" class="btn btn-outline-primary {% if category == '交通' %}active{% endif %}">交通</a>
+        <a href="{{ url_for('guide.guides') }}" class="btn btn-outline-primary {% if not category %}active{% endif %}">全部</a>
+        <a href="{{ url_for('guide.guides', category='美食') }}" class="btn btn-outline-primary {% if category == '美食' %}active{% endif %}">美食</a>
+        <a href="{{ url_for('guide.guides', category='景点') }}" class="btn btn-outline-primary {% if category == '景点' %}active{% endif %}">景点</a>
+        <a href="{{ url_for('guide.guides', category='购物') }}" class="btn btn-outline-primary {% if category == '购物' %}active{% endif %}">购物</a>
+        <a href="{{ url_for('guide.guides', category='交通') }}" class="btn btn-outline-primary {% if category == '交通' %}active{% endif %}">交通</a>
     </div>
 </div>
 
@@ -50,7 +50,7 @@
                         <i class="bi bi-heart ms-2"></i> {{ guide.like_count }}
                         <i class="bi bi-chat ms-2"></i> {{ guide.comment_count }}
                     </small>
-                    <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-primary">阅读全文</a>
+                    <a href="{{ url_for('guide.guide_detail', id=guide.id) }}" class="btn btn-sm btn-primary">阅读全文</a>
                 </div>
             </div>
         </div>
@@ -63,7 +63,7 @@
     <ul class="pagination justify-content-center">
         {% if guides.has_prev %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('guides', page=guides.prev_num, category=category) }}">上一页</a>
+            <a class="page-link" href="{{ url_for('guide.guides', page=guides.prev_num, category=category) }}">上一页</a>
         </li>
         {% endif %}
         {% for page_num in guides.iter_pages(left_edge=2, right_edge=2) %}
@@ -71,7 +71,7 @@
                 {% if page_num == guides.page %}
                 <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                 {% else %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('guides', page=page_num, category=category) }}">{{ page_num }}</a></li>
+                <li class="page-item"><a class="page-link" href="{{ url_for('guide.guides', page=page_num, category=category) }}">{{ page_num }}</a></li>
                 {% endif %}
             {% else %}
             <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -79,7 +79,7 @@
         {% endfor %}
         {% if guides.has_next %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('guides', page=guides.next_num, category=category) }}">下一页</a>
+            <a class="page-link" href="{{ url_for('guide.guides', page=guides.next_num, category=category) }}">下一页</a>
         </li>
         {% endif %}
     </ul>

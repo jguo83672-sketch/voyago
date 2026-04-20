@@ -56,12 +56,12 @@
                     </div>
 
                     <div class="mt-3">
-                        <a href="{{ url_for('community_detail', id=event.community_id) }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('community.community_detail', id=event.community_id) }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> 返回社群
                         </a>
                         {% if current_user.is_authenticated %}
                             {% if is_registered %}
-                            <form action="{{ url_for('unregister_event', id=event.id) }}" method="POST" class="d-inline">
+                            <form action="{{ url_for('community.unregister_event', id=event.id) }}" method="POST" class="d-inline">
                                 <button class="btn btn-warning" onclick="return confirm('确定要取消报名吗？')">
                                     <i class="bi bi-x-circle"></i> 取消报名
                                 </button>
@@ -75,14 +75,14 @@
                                 <i class="bi bi-calendar-x"></i> 活动已结束
                             </button>
                             {% else %}
-                            <form action="{{ url_for('register_event', id=event.id) }}" method="POST" class="d-inline">
+                            <form action="{{ url_for('community.register_event', id=event.id) }}" method="POST" class="d-inline">
                                 <button class="btn btn-primary">
                                     <i class="bi bi-person-plus"></i> 立即报名
                                 </button>
                             </form>
                             {% endif %}
                         {% else %}
-                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">登录后报名</a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">登录后报名</a>
                         {% endif %}
                     </div>
                 </div>

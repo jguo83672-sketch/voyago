@@ -6,9 +6,9 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('travel_shop') }}">旅行用品商店</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('cart') }}">购物车</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('ecommerce.travel_shop') }}">旅行用品商店</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('ecommerce.cart') }}">购物车</a></li>
             <li class="breadcrumb-item active">结账</li>
         </ol>
     </nav>
@@ -203,7 +203,7 @@ function submitOrder() {
     const formData = new FormData(form);
     formData.append('payment_method', document.querySelector('input[name="payment_method"]:checked').value);
 
-    fetch('{{ url_for("checkout") }}', {
+    fetch('{{ url_for('ecommerce.checkout') }}', {
         method: 'POST',
         body: formData
     })
@@ -212,7 +212,7 @@ function submitOrder() {
         if (data.success) {
             showToast('订单创建成功！', 'success');
             setTimeout(() => {
-                window.location.href = `{{ url_for('order_detail', id=0) }}`.replace('0', data.order_id);
+                window.location.href = `{{ url_for('ecommerce.order_detail', id=0) }}`.replace('0', data.order_id);
             }, 1500);
         } else {
             showToast(data.message, 'danger');

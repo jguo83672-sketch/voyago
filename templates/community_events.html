@@ -6,8 +6,8 @@
 <div class="container">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('communities') }}">社群</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('community_detail', id=community.id) }}">{{ community.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('community.communities') }}">社群</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('community.community_detail', id=community.id) }}">{{ community.name }}</a></li>
             <li class="breadcrumb-item active">活动列表</li>
         </ol>
     </nav>
@@ -25,13 +25,13 @@
 
     <!-- 状态筛选 -->
     <div class="btn-group mb-3" role="group">
-        <a href="{{ url_for('community_events', community_id=community.id, status='all') }}"
+        <a href="{{ url_for('community.community_events', community_id=community.id, status='all') }}"
            class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">全部</a>
-        <a href="{{ url_for('community_events', community_id=community.id, status='upcoming') }}"
+        <a href="{{ url_for('community.community_events', community_id=community.id, status='upcoming') }}"
            class="btn {% if status == 'upcoming' %}btn-primary{% else %}btn-outline-primary{% endif %}">即将开始</a>
-        <a href="{{ url_for('community_events', community_id=community.id, status='ongoing') }}"
+        <a href="{{ url_for('community.community_events', community_id=community.id, status='ongoing') }}"
            class="btn {% if status == 'ongoing' %}btn-primary{% else %}btn-outline-primary{% endif %}">进行中</a>
-        <a href="{{ url_for('community_events', community_id=community.id, status='completed') }}"
+        <a href="{{ url_for('community.community_events', community_id=community.id, status='completed') }}"
            class="btn {% if status == 'completed' %}btn-primary{% else %}btn-outline-primary{% endif %}">已结束</a>
     </div>
 
@@ -64,7 +64,7 @@
                         {% elif event.status == 'cancelled' %}
                         <span class="badge bg-danger">已取消</span>
                         {% endif %}
-                        <a href="{{ url_for('event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary float-end">
+                        <a href="{{ url_for('community.event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary float-end">
                             查看详情
                         </a>
                     </div>
@@ -80,7 +80,7 @@
         <ul class="pagination justify-content-center">
             {% if events.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=events.prev_num) }}">
+                <a class="page-link" href="{{ url_for('community.community_events', community_id=community.id, status=status, page=events.prev_num) }}">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
@@ -92,7 +92,7 @@
                     <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=page_num) }}">
+                        <a class="page-link" href="{{ url_for('community.community_events', community_id=community.id, status=status, page=page_num) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -104,7 +104,7 @@
 
             {% if events.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('community_events', community_id=community.id, status=status, page=events.next_num) }}">
+                <a class="page-link" href="{{ url_for('community.community_events', community_id=community.id, status=status, page=events.next_num) }}">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>

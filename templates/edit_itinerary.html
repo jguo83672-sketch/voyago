@@ -64,7 +64,7 @@
                     </div>
 
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-secondary">
+                        <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> 取消
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -91,7 +91,7 @@
                             <span class="badge bg-success ms-2">{{ day.destination.name }}</span>
                             {% endif %}
                         </h6>
-                        <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
+                        <a href="{{ url_for('itinerary.day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}"
                            class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> 详细编辑
                         </a>
@@ -133,7 +133,7 @@
                     <button type="button" class="btn btn-secondary" onclick="saveAllDays()">
                         <i class="bi bi-save"></i> 保存每日更改
                     </button>
-                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-primary">
                         <i class="bi bi-eye"></i> 查看行程
                     </a>
                 </div>
@@ -231,7 +231,7 @@ async function saveAllDays() {
     });
 
     try {
-        const response = await fetch('{{ url_for("update_itinerary_days", id=itinerary.id) }}', {
+        const response = await fetch('{{ url_for('itinerary.update_itinerary_days', id=itinerary.id) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -266,24 +266,58 @@ document.getElementById('plannerForm').addEventListener('submit', async function
             return;
         }
 
-        const result = await response.json();
-        console.log('[Frontend] API result:', result);
+        const initialResult = await response.json();
+        console.log('[Frontend] API initial result:', initialResult);
 
-        if (result.success) {
-            currentItinerary = {
-                ...result.data,
-                destination: formData.destination,
-                days: formData.days,
-                budget: formData.budget
-            };
-            displayItinerary(result.data);
-        } else {
-            alert(result.message || result.error || '行程规划失败，请稍后重试');
+        if (!initialResult.success) {
+            alert(initialResult.message || initialResult.error || '行程规划失败，请稍后重试');
+            return;
         }
+
+        const taskId = initialResult.task_id;
+        
+        // 轮询任务状态
+        const pollTask = async () => {
+            const pollResponse = await fetch(`/api/tasks/${taskId}`);
+            const pollResult = await pollResponse.json();
+            
+            if (!pollResult.success) {
+                alert(pollResult.message || '查询任务状态失败');
+                generateBtn.disabled = false;
+                loadingSpinner.classList.add('d-none');
+                return;
+            }
+            
+            if (pollResult.status === 'completed') {
+                const result = pollResult.data;
+                if (result.success) {
+                    currentItinerary = {
+                        ...result.data,
+                        destination: formData.destination,
+                        days: formData.days,
+                        budget: formData.budget
+                    };
+                    displayItinerary(result.data);
+                } else {
+                    alert(result.message || result.error || '行程规划失败，请稍后重试');
+                }
+                generateBtn.disabled = false;
+                loadingSpinner.classList.add('d-none');
+            } else if (pollResult.status === 'failed') {
+                alert('行程规划失败: ' + (pollResult.error || '未知错误'));
+                generateBtn.disabled = false;
+                loadingSpinner.classList.add('d-none');
+            } else {
+                // 继续轮询
+                setTimeout(pollTask, 2000);
+            }
+        };
+        
+        setTimeout(pollTask, 2000);
+
     } catch (error) {
         alert('网络错误，请稍后重试');
         console.error('[Frontend] Error:', error);
-    } finally {
         generateBtn.disabled = false;
         loadingSpinner.classList.add('d-none');
     }
@@ -436,39 +470,74 @@ document.getElementById('suggestBtn').addEventListener('click', async function()
             })
         });
 
-        const result = await response.json();
-
-        if (result.success && result.data && result.data.recommendations) {
-            let html = '<div class="list-group">';
-            result.data.recommendations.forEach(rec => {
-                html += `
-                    <a href="#" class="list-group-item list-group-item-action suggestion-item">
-                        <h6 class="mb-1">${rec.name}, ${rec.country}</h6>
-                        <p class="mb-1 small text-muted">${rec.city}</p>
-                        <p class="mb-1 small">${rec.reason}</p>
-                        <small class="text-success">💰 ${rec.estimated_budget}</small>
-                        <small class="text-primary ms-2">📅 ${rec.best_season}</small>
-                    </a>
-                `;
-            });
-            html += '</div>';
-            document.getElementById('suggestionArea').innerHTML = html;
-
-            // 点击推荐项
-            document.querySelectorAll('.suggestion-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const name = this.querySelector('h6').textContent.split(',')[0];
-                    document.getElementById('destination').value = name;
-                });
-            });
-        } else {
-            alert(result.error || '获取推荐失败');
+        const initialResult = await response.json();
+        
+        if (!initialResult.success) {
+            alert(initialResult.error || initialResult.message || '获取推荐失败');
+            this.disabled = false;
+            this.textContent = '获取推荐';
+            return;
         }
+        
+        const taskId = initialResult.task_id;
+        const btn = this;
+        
+        const pollTask = async () => {
+            const pollResponse = await fetch(`/api/tasks/${taskId}`);
+            const pollResult = await pollResponse.json();
+            
+            if (!pollResult.success) {
+                alert(pollResult.message || '查询任务状态失败');
+                btn.disabled = false;
+                btn.textContent = '获取推荐';
+                return;
+            }
+            
+            if (pollResult.status === 'completed') {
+                const result = pollResult.data;
+                if (result.success && result.data && result.data.recommendations) {
+                    let html = '<div class="list-group">';
+                    result.data.recommendations.forEach(rec => {
+                        html += `
+                            <a href="#" class="list-group-item list-group-item-action suggestion-item">
+                                <h6 class="mb-1">${rec.name}, ${rec.country}</h6>
+                                <p class="mb-1 small text-muted">${rec.city}</p>
+                                <p class="mb-1 small">${rec.reason}</p>
+                                <small class="text-success">💰 ${rec.estimated_budget}</small>
+                                <small class="text-primary ms-2">📅 ${rec.best_season}</small>
+                            </a>
+                        `;
+                    });
+                    html += '</div>';
+                    document.getElementById('suggestionArea').innerHTML = html;
+
+                    // 点击推荐项
+                    document.querySelectorAll('.suggestion-item').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const name = this.querySelector('h6').textContent.split(',')[0];
+                            document.getElementById('destination').value = name;
+                        });
+                    });
+                } else {
+                    alert(result.error || '获取推荐失败');
+                }
+                btn.disabled = false;
+                btn.textContent = '获取推荐';
+            } else if (pollResult.status === 'failed') {
+                alert('获取推荐失败: ' + (pollResult.error || '未知错误'));
+                btn.disabled = false;
+                btn.textContent = '获取推荐';
+            } else {
+                setTimeout(pollTask, 2000);
+            }
+        };
+        
+        setTimeout(pollTask, 2000);
+
     } catch (error) {
         alert('网络错误，请稍后重试');
         console.error(error);
-    } finally {
         this.disabled = false;
         this.textContent = '获取推荐';
     }

@@ -68,7 +68,7 @@
             <h3 class="mb-4"><i class="bi bi-chat-dots"></i> 评论 ({{ destination.comment_count }})</h3>
 
             {% if current_user.is_authenticated %}
-            <form action="{{ url_for('add_destination_comment', id=destination.id) }}" method="POST" class="mb-4">
+            <form action="{{ url_for('destination.add_destination_comment', id=destination.id) }}" method="POST" class="mb-4">
                 <div class="card">
                     <div class="card-body">
                         <div class="mb-3">
@@ -80,7 +80,7 @@
             </form>
             {% else %}
             <div class="alert alert-info mb-4">
-                <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('login') }}">登录</a>后发表评论
+                <i class="bi bi-info-circle"></i> 请<a href="{{ url_for('auth.login') }}">登录</a>后发表评论
             </div>
             {% endif %}
 
@@ -111,17 +111,17 @@
             <div class="card-body">
                 <h5 class="card-title fw-bold">快速操作</h5>
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('itineraries', destination_id=destination.id) }}" class="btn btn-primary">
+                    <a href="{{ url_for('itinerary.itineraries', destination_id=destination.id) }}" class="btn btn-primary">
                         <i class="bi bi-calendar3"></i> 查看相关行程
                     </a>
-                    <a href="{{ url_for('guides') }}?destination_id={{ destination.id }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('guide.guides') }}?destination_id={{ destination.id }}" class="btn btn-outline-primary">
                         <i class="bi bi-book"></i> 查看相关攻略
                     </a>
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('create_itinerary') }}" class="btn btn-success">
+                    <a href="{{ url_for('itinerary.create_itinerary') }}" class="btn btn-success">
                         <i class="bi bi-plus-circle"></i> 创建行程
                     </a>
-                    <a href="{{ url_for('create_guide') }}?destination_id={{ destination.id }}" class="btn btn-info text-white">
+                    <a href="{{ url_for('guide.create_guide') }}?destination_id={{ destination.id }}" class="btn btn-info text-white">
                         <i class="bi bi-pencil-square"></i> 发布攻略
                     </a>
                     {% endif %}
@@ -134,7 +134,7 @@
             <div class="card-body">
                 <h5 class="card-title fw-bold">管理操作</h5>
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('edit_destination', id=destination.id) }}" class="btn btn-outline-warning">
+                    <a href="{{ url_for('destination.edit_destination', id=destination.id) }}" class="btn btn-outline-warning">
                         <i class="bi bi-pencil"></i> 编辑目的地
                     </a>
                     <button onclick="deleteDestination()" class="btn btn-outline-danger">
@@ -158,7 +158,7 @@
                     <h5 class="card-title fw-bold">{{ guide.title }}</h5>
                     <p class="card-text text-muted"><small>{{ guide.author.username }} · {{ guide.view_count }} 浏览</small></p>
                     <p class="card-text">{{ guide.content[:100] }}...</p>
-                    <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-outline-primary w-100">阅读更多</a>
+                    <a href="{{ url_for('guide.guide_detail', id=guide.id) }}" class="btn btn-sm btn-outline-primary w-100">阅读更多</a>
                 </div>
             </div>
         </div>
@@ -177,7 +177,7 @@
                 <div class="card-body">
                     <h5 class="card-title fw-bold">{{ itinerary.title }}</h5>
                     <p class="card-text text-muted">{{ itinerary.days }}天行程 · {{ itinerary.author.username }}</p>
-                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary w-100">查看详情</a>
+                    <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary w-100">查看详情</a>
                 </div>
             </div>
         </div>
@@ -244,7 +244,7 @@ function deleteDestination() {
     if (confirm('确定要删除这个目的地吗？此操作不可恢复。')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = "{{ url_for('delete_destination', id=destination.id) }}";
+        form.action = "{{ url_for('destination.delete_destination', id=destination.id) }}";
         document.body.appendChild(form);
         form.submit();
     }

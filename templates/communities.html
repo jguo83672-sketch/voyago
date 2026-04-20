@@ -10,7 +10,7 @@
             <p class="text-muted">加入志同道合的旅行社群，一起探索世界！</p>
         </div>
         <div class="col-md-4">
-            <form action="{{ url_for('communities') }}" method="GET" class="d-flex">
+            <form action="{{ url_for('community.communities') }}" method="GET" class="d-flex">
                 <input class="form-control me-2" type="search" name="search" placeholder="搜索社群..." value="{{ request.args.get('search', '') }}">
                 <button class="btn btn-primary" type="submit">
                     <i class="bi bi-search"></i>
@@ -21,7 +21,7 @@
 
     {% if current_user.is_authenticated %}
     <div class="mb-4">
-        <a href="{{ url_for('create_community') }}" class="btn btn-primary">
+        <a href="{{ url_for('community.create_community') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> 创建新社群
         </a>
     </div>
@@ -65,7 +65,7 @@
                     </div>
                 </div>
                 <div class="card-footer bg-white border-top-0">
-                    <a href="{{ url_for('community_detail', id=community.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                    <a href="{{ url_for('community.community_detail', id=community.id) }}" class="btn btn-outline-primary btn-sm w-100">
                         查看详情
                     </a>
                 </div>
@@ -85,7 +85,7 @@
         <ul class="pagination justify-content-center">
             {% if communities.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('communities', page=communities.prev_num, search=request.args.get('search')) }}">
+                <a class="page-link" href="{{ url_for('community.communities', page=communities.prev_num, search=request.args.get('search')) }}">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
@@ -97,7 +97,7 @@
                     <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('communities', page=page_num, search=request.args.get('search')) }}">
+                        <a class="page-link" href="{{ url_for('community.communities', page=page_num, search=request.args.get('search')) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -109,7 +109,7 @@
 
             {% if communities.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('communities', page=communities.next_num, search=request.args.get('search')) }}">
+                <a class="page-link" href="{{ url_for('community.communities', page=communities.next_num, search=request.args.get('search')) }}">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>

@@ -29,7 +29,7 @@
                         {% if community.destination %}
                         <div class="col-md-4">
                             <strong><i class="bi bi-geo-alt"></i> 目的地</strong>
-                            <p class="mb-0"><a href="{{ url_for('destination_detail', id=community.destination.id) }}">{{ community.destination.name }}</a></p>
+                            <p class="mb-0"><a href="{{ url_for('destination.destination_detail', id=community.destination.id) }}">{{ community.destination.name }}</a></p>
                         </div>
                         {% endif %}
                         <div class="col-md-4">
@@ -57,17 +57,17 @@
                         {% if current_user.is_authenticated %}
                             {% if is_member %}
                                 {% if user_role == 'admin' %}
-                                <a href="{{ url_for('edit_community', id=community.id) }}" class="btn btn-warning">
+                                <a href="{{ url_for('community.edit_community', id=community.id) }}" class="btn btn-warning">
                                     <i class="bi bi-pencil"></i> 编辑社群
                                 </a>
                                 {% endif %}
-                                <form action="{{ url_for('leave_community', id=community.id) }}" method="POST" class="d-inline">
+                                <form action="{{ url_for('community.leave_community', id=community.id) }}" method="POST" class="d-inline">
                                     <button class="btn btn-danger" onclick="return confirm('确定要退出该社群吗？')">
                                         <i class="bi bi-box-arrow-right"></i> 退出社群
                                     </button>
                                 </form>
                             {% elif community.can_join %}
-                                <form action="{{ url_for('join_community', id=community.id) }}" method="POST" class="d-inline">
+                                <form action="{{ url_for('community.join_community', id=community.id) }}" method="POST" class="d-inline">
                                     <button class="btn btn-primary">
                                         <i class="bi bi-person-plus"></i> 加入社群
                                     </button>
@@ -78,7 +78,7 @@
                                 </button>
                             {% endif %}
                         {% else %}
-                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">登录后加入</a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">登录后加入</a>
                         {% endif %}
                     </div>
                 </div>
@@ -102,7 +102,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4>社群活动</h4>
                 {% if current_user.is_authenticated and is_member %}
-                <a href="{{ url_for('create_event', community_id=community.id) }}" class="btn btn-primary btn-sm">
+                <a href="{{ url_for('community.create_event', community_id=community.id) }}" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle"></i> 创建活动
                 </a>
                 {% endif %}
@@ -124,7 +124,7 @@
                                 <small class="text-muted">
                                     <i class="bi bi-people"></i> {{ event.participant_count }}/{{ event.max_participants }}
                                 </small>
-                                <a href="{{ url_for('event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary float-end">
+                                <a href="{{ url_for('community.event_detail', id=event.id) }}" class="btn btn-sm btn-outline-primary float-end">
                                     查看详情
                                 </a>
                             </div>
@@ -134,7 +134,7 @@
                 {% endfor %}
             </div>
             <div class="text-center mt-3">
-                <a href="{{ url_for('community_events', community_id=community.id) }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('community.community_events', community_id=community.id) }}" class="btn btn-outline-primary">
                     查看全部活动
                 </a>
             </div>

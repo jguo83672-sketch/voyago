@@ -48,7 +48,7 @@
 <div class="container mb-5">
     <div class="row g-4">
         <div class="col-md-3">
-            <a href="{{ url_for('destinations') }}" class="quick-card">
+            <a href="{{ url_for('destination.destinations') }}" class="quick-card">
                 <div class="quick-card-icon">
                     <i class="bi bi-geo-alt"></i>
                 </div>
@@ -59,7 +59,7 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ url_for('guides') }}" class="quick-card">
+            <a href="{{ url_for('guide.guides') }}" class="quick-card">
                 <div class="quick-card-icon">
                     <i class="bi bi-book"></i>
                 </div>
@@ -70,7 +70,7 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ url_for('itineraries') }}" class="quick-card">
+            <a href="{{ url_for('itinerary.itineraries') }}" class="quick-card">
                 <div class="quick-card-icon">
                     <i class="bi bi-calendar3"></i>
                 </div>
@@ -81,7 +81,7 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ url_for('create_itinerary') }}" class="quick-card">
+            <a href="{{ url_for('itinerary.create_itinerary') }}" class="quick-card">
                 <div class="quick-card-icon">
                     <i class="bi bi-plus-circle"></i>
                 </div>
@@ -101,12 +101,12 @@
             <h2><i class="bi bi-fire text-primary"></i> 热门目的地</h2>
             <p>探索全球最受欢迎的旅行圣地</p>
         </div>
-        <a href="{{ url_for('destinations') }}" class="btn-link text-primary">查看全部 <i class="bi bi-arrow-right"></i></a>
+        <a href="{{ url_for('destination.destinations') }}" class="btn-link text-primary">查看全部 <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-4">
         {% for destination in destinations %}
         <div class="col-md-4">
-            <a href="{{ url_for('destination_detail', id=destination.id) }}" class="destination-card-link">
+            <a href="{{ url_for('destination.destination_detail', id=destination.id) }}" class="destination-card-link">
                 <div class="destination-card">
                     {% if destination.cover_image %}
                     <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
@@ -138,12 +138,12 @@
             <h2><i class="bi bi-bookmark-fill text-info"></i> 精选攻略</h2>
             <p>来自旅行达人的实用攻略分享</p>
         </div>
-        <a href="{{ url_for('guides') }}" class="btn-link text-info">查看全部 <i class="bi bi-arrow-right"></i></a>
+        <a href="{{ url_for('guide.guides') }}" class="btn-link text-info">查看全部 <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-4">
         {% for guide in guides %}
         <div class="col-md-6">
-            <a href="{{ url_for('guide_detail', id=guide.id) }}" class="guide-card-link">
+            <a href="{{ url_for('guide.guide_detail', id=guide.id) }}" class="guide-card-link">
                 <div class="guide-card">
                     <div class="guide-card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -172,12 +172,12 @@
             <h2><i class="bi bi-calendar-check-fill text-success"></i> 最新行程</h2>
             <p>精心规划的旅行路线参考</p>
         </div>
-        <a href="{{ url_for('itineraries') }}" class="btn-link text-success">查看全部 <i class="bi bi-arrow-right"></i></a>
+        <a href="{{ url_for('itinerary.itineraries') }}" class="btn-link text-success">查看全部 <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-4">
         {% for itinerary in itineraries %}
         <div class="col-md-4">
-            <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="itinerary-card-link">
+            <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="itinerary-card-link">
                 <div class="itinerary-card">
                     <div class="itinerary-card-body">
                         <h5>{{ itinerary.title }}</h5>

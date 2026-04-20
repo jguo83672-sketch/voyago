@@ -14,7 +14,7 @@
                     <span class="badge bg-light text-primary ms-2">{{ day.destination.name }}</span>
                     {% endif %}
                 </h5>
-                <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}#day-{{ day.day_number }}" class="btn btn-sm btn-light">
+                <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}#day-{{ day.day_number }}" class="btn btn-sm btn-light">
                     <i class="bi bi-arrow-left"></i> 返回行程
                 </a>
             </div>
@@ -116,18 +116,18 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     {% if day.day_number > 1 %}
-                    <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number-1) }}"
+                    <a href="{{ url_for('itinerary.day_detail', itinerary_id=itinerary.id, day_number=day.day_number-1) }}"
                        class="btn btn-outline-primary">
                         <i class="bi bi-arrow-up"></i> 上一天
                     </a>
                     {% endif %}
                     {% if day.day_number < itinerary.days %}
-                    <a href="{{ url_for('day_detail', itinerary_id=itinerary.id, day_number=day.day_number+1) }}"
+                    <a href="{{ url_for('itinerary.day_detail', itinerary_id=itinerary.id, day_number=day.day_number+1) }}"
                        class="btn btn-outline-primary">
                         <i class="bi bi-arrow-down"></i> 下一天
                     </a>
                     {% endif %}
-                    <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-eye"></i> 查看完整行程
                     </a>
                 </div>
@@ -541,7 +541,7 @@ async function saveBasicInfo() {
     formData.append('longitude', document.getElementById('day_longitude').value);
 
     try {
-        const response = await fetch('{{ url_for("edit_day_detail", itinerary_id=itinerary.id, day_number=day.day_number) }}', {
+        const response = await fetch('{{ url_for('itinerary.edit_day_detail', itinerary_id=itinerary.id, day_number=day.day_number) }}', {
             method: 'POST',
             body: formData
         });
@@ -561,7 +561,7 @@ async function saveBasicInfo() {
 // 保存活动
 async function saveActivities() {
     try {
-        const response = await fetch('{{ url_for("manage_day_activities", itinerary_id=itinerary.id, day_number=day.day_number) }}', {
+        const response = await fetch('{{ url_for('itinerary.manage_day_activities', itinerary_id=itinerary.id, day_number=day.day_number) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

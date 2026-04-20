@@ -23,10 +23,28 @@ app.config['DEEPSEEK_API_KEY'] = os.getenv('DEEPSEEK_API_KEY', '')
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'auth.login'
 login_manager.login_message = '请先登录访问此页面'
 
-from routes import *
+from blueprints.footprint import footprint_bp
+from blueprints.destination import destination_bp
+from blueprints.guide import guide_bp
+from blueprints.itinerary import itinerary_bp
+from blueprints.community import community_bp
+from blueprints.ai_tools import ai_tools_bp
+from blueprints.main import main_bp
+from blueprints.auth import auth_bp
+from blueprints.ecommerce import ecommerce_bp
+
+app.register_blueprint(footprint_bp)
+app.register_blueprint(destination_bp)
+app.register_blueprint(guide_bp)
+app.register_blueprint(itinerary_bp)
+app.register_blueprint(community_bp)
+app.register_blueprint(ai_tools_bp)
+app.register_blueprint(main_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(ecommerce_bp)
 from models import User
 
 @login_manager.user_loader

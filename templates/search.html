@@ -36,7 +36,7 @@
                         <h5 class="card-title">{{ destination.name }}</h5>
                         <p class="card-text text-muted">{{ destination.country }}</p>
                         <p class="card-text">{{ destination.description[:80] }}...</p>
-                        <a href="{{ url_for('destination_detail', id=destination.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                        <a href="{{ url_for('destination.destination_detail', id=destination.id) }}" class="btn btn-sm btn-primary">查看详情</a>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                         <h5 class="card-title">{{ guide.title }}</h5>
                         <p class="card-text text-muted">{{ guide.author.username }} · {{ guide.destination.name }}</p>
                         <p class="card-text">{{ guide.content[:80] }}...</p>
-                        <a href="{{ url_for('guide_detail', id=guide.id) }}" class="btn btn-sm btn-primary">阅读全文</a>
+                        <a href="{{ url_for('guide.guide_detail', id=guide.id) }}" class="btn btn-sm btn-primary">阅读全文</a>
                     </div>
                 </div>
             </div>
@@ -78,7 +78,7 @@
                         <h5 class="card-title">{{ itinerary.title }}</h5>
                         <p class="card-text text-muted">{{ itinerary.destination.name }} · {{ itinerary.days }}天</p>
                         <p class="card-text">{{ itinerary.description[:80] }}...</p>
-                        <a href="{{ url_for('itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                        <a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}" class="btn btn-sm btn-primary">查看详情</a>
                     </div>
                 </div>
             </div>

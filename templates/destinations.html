@@ -9,7 +9,7 @@
         <div class="search-box-wrapper">
             <h1 class="search-title">发现世界之美</h1>
             <p class="search-subtitle">探索全球热门目的地，开启您的梦幻之旅</p>
-            <form action="{{ url_for('destinations') }}" method="GET" class="dest-search-form">
+            <form action="{{ url_for('destination.destinations') }}" method="GET" class="dest-search-form">
                 <div class="input-group search-input-group">
                     <span class="input-group-text search-icon">
                         <i class="bi bi-search"></i>
@@ -26,7 +26,7 @@
 <div class="container dest-container">
     <!-- 国内游/出国游/邮轮游/周末近郊游/主题乐园 -->
     <div class="dest-type-selector">
-        <a href="{{ url_for('destinations', region_type='domestic') }}"
+        <a href="{{ url_for('destination.destinations', region_type='domestic') }}"
            class="dest-type-card {{ 'active' if filters.region_type == 'domestic' else '' }}">
             <div class="dest-type-icon domestic-icon">
                 <i class="bi bi-house-fill"></i>
@@ -36,7 +36,7 @@
                 <p>探索祖国大好河山</p>
             </div>
         </a>
-        <a href="{{ url_for('destinations', region_type='international') }}"
+        <a href="{{ url_for('destination.destinations', region_type='international') }}"
            class="dest-type-card {{ 'active' if filters.region_type == 'international' else '' }}">
             <div class="dest-type-icon international-icon">
                 <i class="bi bi-airplane-fill"></i>
@@ -46,7 +46,7 @@
                 <p>体验异国风情文化</p>
             </div>
         </a>
-        <a href="{{ url_for('destinations', region_type='cruise') }}"
+        <a href="{{ url_for('destination.destinations', region_type='cruise') }}"
            class="dest-type-card {{ 'active' if filters.region_type == 'cruise' else '' }}">
             <div class="dest-type-icon cruise-icon">
                 <i class="bi bi-water"></i>
@@ -56,7 +56,7 @@
                 <p>畅享海上度假时光</p>
             </div>
         </a>
-        <a href="{{ url_for('destinations', region_type='weekend') }}"
+        <a href="{{ url_for('destination.destinations', region_type='weekend') }}"
            class="dest-type-card {{ 'active' if filters.region_type == 'weekend' else '' }}">
             <div class="dest-type-icon weekend-icon">
                 <i class="bi bi-sun"></i>
@@ -66,7 +66,7 @@
                 <p>轻松休闲的短途旅行</p>
             </div>
         </a>
-        <a href="{{ url_for('destinations', region_type='theme') }}"
+        <a href="{{ url_for('destination.destinations', region_type='theme') }}"
            class="dest-type-card {{ 'active' if filters.region_type == 'theme' else '' }}">
             <div class="dest-type-icon theme-icon">
                 <i class="bi bi-stars"></i>
@@ -89,97 +89,97 @@
                 {% if filters.region_type == 'domestic' %}
                 <li><h6 class="dropdown-header">按省份筛选</h6></li>
                 <li><a class="dropdown-item {{ 'active' if not filters.province else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic') }}">全部省份</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic') }}">全部省份</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '北京' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='北京') }}">北京</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='北京') }}">北京</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '上海' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='上海') }}">上海</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='上海') }}">上海</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '浙江' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='浙江') }}">浙江</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='浙江') }}">浙江</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '江苏' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='江苏') }}">江苏</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='江苏') }}">江苏</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '广东' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='广东') }}">广东</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='广东') }}">广东</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '四川' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='四川') }}">四川</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='四川') }}">四川</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '云南' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='云南') }}">云南</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='云南') }}">云南</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '海南' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='海南') }}">海南</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='海南') }}">海南</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '台湾' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='台湾') }}">台湾</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='台湾') }}">台湾</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '香港' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='香港') }}">香港</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='香港') }}">香港</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '澳门' else '' }}"
-                       href="{{ url_for('destinations', region_type='domestic', province='澳门') }}">澳门</a></li>
+                       href="{{ url_for('destination.destinations', region_type='domestic', province='澳门') }}">澳门</a></li>
                 {% elif filters.region_type == 'international' %}
                 <li><h6 class="dropdown-header">按大洲筛选</h6></li>
                 <li><a class="dropdown-item {{ 'active' if not filters.continent else '' }}"
-                       href="{{ url_for('destinations', region_type='international') }}">全部大洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international') }}">全部大洲</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '亚洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲') }}">亚洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲') }}">亚洲</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '欧洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲') }}">欧洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲') }}">欧洲</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '北美洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='北美洲') }}">北美洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='北美洲') }}">北美洲</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '南美洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='南美洲') }}">南美洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='南美洲') }}">南美洲</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '非洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='非洲') }}">非洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='非洲') }}">非洲</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.continent == '大洋洲' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='大洋洲') }}">大洋洲</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='大洋洲') }}">大洋洲</a></li>
 
                 {% elif filters.region_type in ['cruise', 'weekend', 'theme'] %}
                 <li><h6 class="dropdown-header">按地区筛选</h6></li>
                 <li><a class="dropdown-item {{ 'active' if not filters.province else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type) }}">全部地区</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type) }}">全部地区</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '上海' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='上海') }}">上海</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='上海') }}">上海</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '广东' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='广东') }}">广东</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='广东') }}">广东</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '北京' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='北京') }}">北京</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='北京') }}">北京</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '浙江' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='浙江') }}">浙江</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='浙江') }}">浙江</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '江苏' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='江苏') }}">江苏</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='江苏') }}">江苏</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '四川' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='四川') }}">四川</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='四川') }}">四川</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '海南' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='海南') }}">海南</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='海南') }}">海南</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '香港' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='香港') }}">香港</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='香港') }}">香港</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.province == '澳门' else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, province='澳门') }}">澳门</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, province='澳门') }}">澳门</a></li>
 
                 {% if filters.continent %}
                 <li><hr class="dropdown-divider"></li>
                 <li><h6 class="dropdown-header">按地区筛选</h6></li>
                 {% if filters.continent == '亚洲' %}
                 <li><a class="dropdown-item {{ 'active' if not filters.area else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲') }}">全部地区</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲') }}">全部地区</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '东南亚' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲', area='东南亚') }}">东南亚</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲', area='东南亚') }}">东南亚</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '东亚' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲', area='东亚') }}">东亚</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲', area='东亚') }}">东亚</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '南亚' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲', area='南亚') }}">南亚</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲', area='南亚') }}">南亚</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '西亚' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='亚洲', area='西亚') }}">西亚</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='亚洲', area='西亚') }}">西亚</a></li>
                 {% elif filters.continent == '欧洲' %}
                 <li><a class="dropdown-item {{ 'active' if not filters.area else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲') }}">全部地区</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲') }}">全部地区</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '西欧' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲', area='西欧') }}">西欧</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲', area='西欧') }}">西欧</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '南欧' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲', area='南欧') }}">南欧</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲', area='南欧') }}">南欧</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '北欧' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲', area='北欧') }}">北欧</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲', area='北欧') }}">北欧</a></li>
                 <li><a class="dropdown-item {{ 'active' if filters.area == '东欧' else '' }}"
-                       href="{{ url_for('destinations', region_type='international', continent='欧洲', area='东欧') }}">东欧</a></li>
+                       href="{{ url_for('destination.destinations', region_type='international', continent='欧洲', area='东欧') }}">东欧</a></li>
                 {% endif %}
                 {% endif %}
 
@@ -187,11 +187,11 @@
                 <li><hr class="dropdown-divider"></li>
                 <li><h6 class="dropdown-header">按国家筛选</h6></li>
                 <li><a class="dropdown-item {{ 'active' if not filters.country else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area) }}">全部国家</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area) }}">全部国家</a></li>
                 {% set countries = destinations.items | map(attribute='country') | unique | list | sort %}
                 {% for country in countries %}
                 <li><a class="dropdown-item {{ 'active' if filters.country == country else '' }}"
-                       href="{{ url_for('destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area, country=country) }}">{{ country }}</a></li>
+                       href="{{ url_for('destination.destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area, country=country) }}">{{ country }}</a></li>
                 {% endfor %}
                 {% endif %}
                 {% endif %}
@@ -206,37 +206,37 @@
                     {% elif filters.region_type == 'weekend' %}周末近郊游
                     {% elif filters.region_type == 'theme' %}主题乐园
                     {% endif %}
-                    <a href="{{ url_for('destinations') }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations') }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
                 {% if filters.province %}
                 <span class="filter-tag">
                     {{ filters.province }}
-                    <a href="{{ url_for('destinations', region_type=filters.region_type) }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations', region_type=filters.region_type) }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
                 {% if filters.continent %}
                 <span class="filter-tag">
                     {{ filters.continent }}
-                    <a href="{{ url_for('destinations', region_type=filters.region_type) }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations', region_type=filters.region_type) }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
                 {% if filters.area %}
                 <span class="filter-tag">
                     {{ filters.area }}
-                    <a href="{{ url_for('destinations', region_type=filters.region_type, continent=filters.continent) }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations', region_type=filters.region_type, continent=filters.continent) }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
                 {% if filters.country %}
                 <span class="filter-tag">
                     {{ filters.country }}
-                    <a href="{{ url_for('destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area) }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations', region_type=filters.region_type, continent=filters.continent, area=filters.area) }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
                 {% if request.args.get('search') %}
                 <span class="filter-tag">
                     搜索: {{ request.args.get('search') }}
-                    <a href="{{ url_for('destinations') }}" class="filter-close"><i class="bi bi-x"></i></a>
+                    <a href="{{ url_for('destination.destinations') }}" class="filter-close"><i class="bi bi-x"></i></a>
                 </span>
                 {% endif %}
             </div>
@@ -253,12 +253,12 @@
     <section class="dest-section">
         <div class="section-header">
             <h2><i class="bi bi-fire"></i> 热门目的地推荐</h2>
-            <a href="{{ url_for('destinations', sort_by='rating') }}" class="view-all-link">查看全部 <i class="bi bi-arrow-right"></i></a>
+            <a href="{{ url_for('destination.destinations', sort_by='rating') }}" class="view-all-link">查看全部 <i class="bi bi-arrow-right"></i></a>
         </div>
         <div class="dest-grid">
             {% for destination in destinations.items[:8] %}
             <div class="dest-card">
-                <a href="{{ url_for('destination_detail', id=destination.id) }}" class="dest-card-link">
+                <a href="{{ url_for('destination.destination_detail', id=destination.id) }}" class="dest-card-link">
                     <div class="dest-card-image">
                         {% if destination.cover_image %}
                         <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
@@ -293,11 +293,11 @@
             <h2><i class="bi bi-list-ul"></i> 全部目的地</h2>
             {% if not request.args.get('search') %}
             <div class="sort-options">
-                <a href="{{ url_for('destinations', region_type=filters.region_type, province=filters.province, continent=filters.continent, area=filters.area, country=filters.country, sort_by='rating') }}"
+                <a href="{{ url_for('destination.destinations', region_type=filters.region_type, province=filters.province, continent=filters.continent, area=filters.area, country=filters.country, sort_by='rating') }}"
                    class="sort-btn {{ 'active' if filters.sort_by == 'rating' else '' }}">
                     <i class="bi bi-star-fill"></i> 按评分
                 </a>
-                <a href="{{ url_for('destinations', region_type=filters.region_type, province=filters.province, continent=filters.continent, area=filters.area, country=filters.country, sort_by='name') }}"
+                <a href="{{ url_for('destination.destinations', region_type=filters.region_type, province=filters.province, continent=filters.continent, area=filters.area, country=filters.country, sort_by='name') }}"
                    class="sort-btn {{ 'active' if filters.sort_by == 'name' else '' }}">
                     <i class="bi bi-sort-alpha-down"></i> 按拼音
                 </a>
@@ -308,7 +308,7 @@
         <div class="dest-grid-full">
             {% for destination in destinations.items %}
             <div class="dest-card">
-                <a href="{{ url_for('destination_detail', id=destination.id) }}" class="dest-card-link">
+                <a href="{{ url_for('destination.destination_detail', id=destination.id) }}" class="dest-card-link">
                     <div class="dest-card-image">
                         {% if destination.cover_image %}
                         <img src="{{ url_for('static', filename='uploads/' + destination.cover_image) }}"
@@ -338,7 +338,7 @@
         <div class="no-results">
             <i class="bi bi-inbox"></i>
             <p>没有找到符合条件的目的地</p>
-            <a href="{{ url_for('destinations') }}" class="btn btn-primary">返回全部</a>
+            <a href="{{ url_for('destination.destinations') }}" class="btn btn-primary">返回全部</a>
         </div>
         {% endif %}
     </section>

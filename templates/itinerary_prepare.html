@@ -6,9 +6,9 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首页</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('itineraries') }}">行程</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('itinerary_detail', id=itinerary.id) }}">{{ itinerary.title }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('itinerary.itineraries') }}">行程</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('itinerary.itinerary_detail', id=itinerary.id) }}">{{ itinerary.title }}</a></li>
             <li class="breadcrumb-item active">行程准备</li>
         </ol>
     </nav>
@@ -157,7 +157,7 @@ document.getElementById('prepForm').addEventListener('submit', function(e) {
 
     const formData = new FormData(this);
 
-    fetch(`{{ url_for('save_itinerary_prep', itinerary_id=itinerary.id) }}`, {
+    fetch(`{{ url_for('itinerary.save_itinerary_prep', itinerary_id=itinerary.id) }}`, {
         method: 'POST',
         body: formData
     })
@@ -183,7 +183,7 @@ function loadHotels() {
     const container = document.getElementById('hotelResults');
     container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
 
-    fetch(`{{ url_for('get_hotel_recommendations', itinerary_id=itinerary.id) }}`)
+    fetch(`{{ url_for('itinerary.get_hotel_recommendations', itinerary_id=itinerary.id) }}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.hotels.length > 0) {
@@ -232,7 +232,7 @@ function loadFlights() {
     const container = document.getElementById('flightResults');
     container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
 
-    fetch(`{{ url_for('get_flight_recommendations', itinerary_id=itinerary.id) }}`)
+    fetch(`{{ url_for('itinerary.get_flight_recommendations', itinerary_id=itinerary.id) }}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.flights.length > 0) {
